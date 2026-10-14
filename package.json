@@ -1,6 +1,6 @@
 {
   "name": "moodle-student-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Read-only Moodle for AI: due dates, assignments, grades, announcements and course content.",
   "type": "module",
   "main": "build/src/index.js",
