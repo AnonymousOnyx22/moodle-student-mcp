@@ -20,7 +20,8 @@
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/src/index.js', 0o755)\"",
     "test": "vitest run",
-    "start": "node build/src/index.js"
+    "start": "node build/src/index.js",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "mcp",
