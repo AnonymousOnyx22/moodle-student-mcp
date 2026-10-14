@@ -111,11 +111,12 @@ export const tools: ToolDef<Api>[] = [
       const r = await api.call<{ grades?: { courseid: number; grade: string }[] }>("gradereport_overview_get_course_grades", {
         userid: await api.userId(),
       });
-      const names = new Map(courses.map((c) => [c.id, c.fullname]));
+      const byId = new Map((r.grades ?? []).map((g) => [g.courseid, g.grade]));
       return bullets(
-        (r.grades ?? [])
-          .filter((g) => names.has(g.courseid))
-          .map((g) => `${names.get(g.courseid)} ${g.grade && g.grade !== "-" ? g.grade : "no grade posted yet"}`),
+        courses.map((c) => {
+          const g = byId.get(c.id);
+          return `${c.fullname} ${g && g !== "-" ? g : "no grade posted yet"}`;
+        }),
         "No grades found.",
       );
     },
