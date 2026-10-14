@@ -6,6 +6,8 @@ This is a free, open source [MCP](https://modelcontextprotocol.io) server. It le
 
 Works with Moodle sites that have the mobile web service turned on. Not affiliated with Moodle Pty Ltd.
 
+Free forever. No sign up and no subscription. Your login details only ever go to your own school.
+
 ## Quick start
 
 1. In Moodle, open your profile menu, go to **Preferences > User account > Security keys**. Copy the key for **Moodle mobile web service**.

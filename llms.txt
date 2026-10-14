@@ -1,0 +1,22 @@
+# moodle-student-mcp
+
+> Free, open source, read only MCP server that lets AI apps (Claude, ChatGPT, Cursor, Copilot and others) read a student's Moodle courses, due dates, grades and announcements. It cannot submit, edit or delete anything.
+
+## Setup
+- Needs MOODLE_BASE_URL and MOODLE_TOKEN.
+- Copy the Moodle mobile web service key from Preferences, User account, Security keys.
+- Run with npx -y moodle-student-mcp. Run `npx moodle-student-mcp doctor` to check the setup.
+
+## Tools (all read only)
+- get_my_courses
+- get_upcoming_due_dates
+- get_overdue
+- get_assignments
+- get_my_grades
+- get_course_grade_items
+- get_course_content
+- get_announcements
+
+## Links
+- Source and README, https://github.com/AnonymousOnyx22/moodle-student-mcp
+- Also available, Brightspace MCP for D2L Brightspace, https://brightspacemcp.com

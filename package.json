@@ -1,21 +1,74 @@
 {
   "name": "moodle-student-mcp",
   "version": "0.1.0",
-  "description": "Read-only MCP server that lets Claude, ChatGPT and other AI apps see your Moodle courses, assignments, grades and forums.",
+  "description": "Read-only Moodle for AI: due dates, assignments, grades, announcements and course content.",
   "type": "module",
   "main": "build/src/index.js",
-  "bin": { "moodle-student-mcp": "build/src/index.js" },
-  "files": ["build/src", "README.md", "LICENSE"],
-  "engines": { "node": ">=20" },
+  "bin": {
+    "moodle-student-mcp": "build/src/index.js"
+  },
+  "files": [
+    "build/src",
+    "README.md",
+    "llms.txt",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/src/index.js', 0o755)\"",
     "test": "vitest run",
     "start": "node build/src/index.js"
   },
-  "keywords": ["mcp", "model-context-protocol", "moodle"],
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "lms",
+    "learning-management-system",
+    "student",
+    "students",
+    "education",
+    "edtech",
+    "university",
+    "college",
+    "school",
+    "ai-agent",
+    "agent",
+    "claude",
+    "claude-desktop",
+    "claude-code",
+    "chatgpt",
+    "cursor",
+    "copilot",
+    "windsurf",
+    "llm",
+    "assignments",
+    "grades",
+    "due-dates",
+    "homework",
+    "study",
+    "study-planner",
+    "announcements",
+    "course-content",
+    "read-only",
+    "moodle",
+    "moodle-lms",
+    "moodle-api",
+    "moodle-web-services",
+    "moodle-mcp",
+    "moodle-ai",
+    "moodle-grades",
+    "moodle-assignments"
+  ],
   "author": "AnonymousOnyx22",
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/AnonymousOnyx22/moodle-student-mcp.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnonymousOnyx22/moodle-student-mcp.git"
+  },
   "homepage": "https://brightspacemcp.com",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
@@ -25,5 +78,9 @@
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"
+  },
+  "mcpName": "io.github.AnonymousOnyx22/moodle-student-mcp",
+  "bugs": {
+    "url": "https://github.com/AnonymousOnyx22/moodle-student-mcp/issues"
   }
 }
