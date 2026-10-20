@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.2
+
+- Not in npm top 40 for "moodle mcp"
+- Raise the README setup errors with fixes and the Security keys path
+- Update vitest to 5 and verify the 0.1.1 version across the pack
+- Audit llms.txt and glama.json so all eight tools appear with parameters and one example call each
+- Give each of the 8 tools in src/tools.ts a description with concrete inputs and a sample user prompt
+- Rebuild the README first screen as an npx install block plus three example prompts above the fold
+- Rewrite package.json description to lead with the phrase 'Moodle MCP' and add exact-match keywords
+- Shorten the server.json description to 100 characters (it is 138)
+- search-rank
+
 ## Unreleased
 
 - Dependencies updated. Vitest is on 5 now, and the Model Context Protocol SDK and zod are on their newest releases. The older Vitest release had security advisories that npm reported. Those are gone now.
