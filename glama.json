@@ -5,5 +5,83 @@
   "type": "mcp-server",
   "maintainers": [
     "AnonymousOnyx22"
+  ],
+  "tools": [
+    {
+      "name": "get_my_courses",
+      "description": "Lists your current courses with the ID other tools take as course_id. Hides finished and hidden courses.",
+      "parameters": [],
+      "example": { "name": "get_my_courses", "arguments": {} }
+    },
+    {
+      "name": "get_upcoming_due_dates",
+      "description": "Lists up to 50 items due in the next 60 days across all current courses, soonest first, with the course name and due date.",
+      "parameters": [],
+      "example": { "name": "get_upcoming_due_dates", "arguments": {} }
+    },
+    {
+      "name": "get_overdue",
+      "description": "Lists past due items from the last 45 days that still need action, with the course name and the date each was due.",
+      "parameters": [],
+      "example": { "name": "get_overdue", "arguments": {} }
+    },
+    {
+      "name": "get_assignments",
+      "description": "Lists up to 25 assignments for one course with due dates and submission status: not submitted, draft, submitted or graded.",
+      "parameters": [
+        {
+          "name": "course_id",
+          "type": "string | number",
+          "required": true,
+          "description": "Moodle course ID from get_my_courses."
+        }
+      ],
+      "example": { "name": "get_assignments", "arguments": { "course_id": 11 } }
+    },
+    {
+      "name": "get_my_grades",
+      "description": "Shows the posted overall grade for every current course, or \"no grade posted yet\".",
+      "parameters": [],
+      "example": { "name": "get_my_grades", "arguments": {} }
+    },
+    {
+      "name": "get_course_grade_items",
+      "description": "Lists every graded item for one course with the mark and percentage, including the course total when there is one.",
+      "parameters": [
+        {
+          "name": "course_id",
+          "type": "string | number",
+          "required": true,
+          "description": "Moodle course ID from get_my_courses."
+        }
+      ],
+      "example": { "name": "get_course_grade_items", "arguments": { "course_id": 11 } }
+    },
+    {
+      "name": "get_course_content",
+      "description": "Lists the sections of one course, such as weeks or topics, with up to 40 activities in each, such as pages, quizzes and forums.",
+      "parameters": [
+        {
+          "name": "course_id",
+          "type": "string | number",
+          "required": true,
+          "description": "Moodle course ID from get_my_courses."
+        }
+      ],
+      "example": { "name": "get_course_content", "arguments": { "course_id": 11 } }
+    },
+    {
+      "name": "get_announcements",
+      "description": "Lists the latest news forum posts with subject and text, up to 5 posts from each of up to 10 news forums.",
+      "parameters": [
+        {
+          "name": "course_ids",
+          "type": "array of string | number",
+          "required": false,
+          "description": "Course IDs from get_my_courses to limit the search. Leave out to cover all current courses."
+        }
+      ],
+      "example": { "name": "get_announcements", "arguments": { "course_ids": [11] } }
+    }
   ]
 }

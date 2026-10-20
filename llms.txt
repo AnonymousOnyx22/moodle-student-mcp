@@ -8,14 +8,48 @@
 - Run with npx -y moodle-student-mcp. Run `npx moodle-student-mcp doctor` to check the setup.
 
 ## Tools (all read only)
-- get_my_courses
-- get_upcoming_due_dates
-- get_overdue
-- get_assignments
-- get_my_grades
-- get_course_grade_items
-- get_course_content
-- get_announcements
+
+Every tool is listed below with its parameters and one example call. Example calls are JSON in the MCP tools/call shape: the tool name plus its arguments.
+
+### get_my_courses
+Lists your current courses with the ID other tools take as course_id. Hides finished and hidden courses.
+Parameters: none.
+Example call: `{"name":"get_my_courses","arguments":{}}`
+
+### get_upcoming_due_dates
+Lists up to 50 items due in the next 60 days across all current courses, soonest first, with the course name and due date.
+Parameters: none.
+Example call: `{"name":"get_upcoming_due_dates","arguments":{}}`
+
+### get_overdue
+Lists past due items from the last 45 days that still need action, with the course name and the date each was due.
+Parameters: none.
+Example call: `{"name":"get_overdue","arguments":{}}`
+
+### get_assignments
+Lists up to 25 assignments for one course with due dates and submission status: not submitted, draft, submitted or graded.
+Parameters: course_id (required, Moodle course ID from get_my_courses, string or number).
+Example call: `{"name":"get_assignments","arguments":{"course_id":11}}`
+
+### get_my_grades
+Shows the posted overall grade for every current course, or "no grade posted yet".
+Parameters: none.
+Example call: `{"name":"get_my_grades","arguments":{}}`
+
+### get_course_grade_items
+Lists every graded item for one course with the mark and percentage, including the course total when there is one.
+Parameters: course_id (required, Moodle course ID from get_my_courses, string or number).
+Example call: `{"name":"get_course_grade_items","arguments":{"course_id":11}}`
+
+### get_course_content
+Lists the sections of one course, such as weeks or topics, with up to 40 activities in each, such as pages, quizzes and forums.
+Parameters: course_id (required, Moodle course ID from get_my_courses, string or number).
+Example call: `{"name":"get_course_content","arguments":{"course_id":11}}`
+
+### get_announcements
+Lists the latest news forum posts with subject and text, up to 5 posts from each of up to 10 news forums.
+Parameters: course_ids (optional, array of course IDs from get_my_courses to limit the search, string or number items; leave it out to cover all current courses).
+Example call: `{"name":"get_announcements","arguments":{"course_ids":[11]}}`
 
 ## Links
 - Source and README, https://github.com/AnonymousOnyx22/moodle-student-mcp
