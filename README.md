@@ -1,8 +1,8 @@
 # Moodle MCP for students
 
-Ask your AI what's actually left to do in Moodle.
+Ask your AI what's actually left to do in Moodle with the Moodle MCP server.
 
-This is a free, open source [MCP](https://modelcontextprotocol.io) server. It lets Claude, ChatGPT, Cursor and other AI apps read your Moodle courses, due dates, grades and announcements. It is **read only**. It can never submit, edit or delete anything.
+This is a free, open source [Moodle MCP](https://modelcontextprotocol.io) server. It lets Claude, ChatGPT, Cursor and other AI apps read your Moodle courses, due dates, grades and announcements. It is **read only**. It can never submit, edit or delete anything.
 
 Works with Moodle sites that have the mobile web service turned on. Not affiliated with Moodle Pty Ltd.
 

@@ -2,7 +2,7 @@
 
 ## 0.1.1
 
-- README now lists every free student MCP server from the same author. Nothing else changed.
+- Improved discoverability for "moodle mcp" searches. Updated description and keywords in package metadata and docs. README now lists every free student MCP server from the same author.
 
 ## 0.1.0
 

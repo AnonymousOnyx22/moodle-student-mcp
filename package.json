@@ -1,7 +1,7 @@
 {
   "name": "moodle-student-mcp",
   "version": "0.1.1",
-  "description": "Read-only Moodle for AI: due dates, assignments, grades, announcements and course content.",
+  "description": "Moodle MCP server: read-only access to Moodle courses, due dates, assignments, grades, announcements and course content for AI assistants.",
   "type": "module",
   "main": "build/src/index.js",
   "bin": {
@@ -24,6 +24,10 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
+    "moodle mcp",
+    "moodle-mcp",
+    "moodle mcp server",
+    "moodle-mcp-server",
     "mcp",
     "mcp-server",
     "model-context-protocol",
@@ -51,7 +55,6 @@
     "due-dates",
     "homework",
     "study",
-    "study-planner",
     "announcements",
     "course-content",
     "read-only",
@@ -59,7 +62,6 @@
     "moodle-lms",
     "moodle-api",
     "moodle-web-services",
-    "moodle-mcp",
     "moodle-ai",
     "moodle-grades",
     "moodle-assignments"

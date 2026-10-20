@@ -1,5 +1,8 @@
 {
   "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "name": "moodle-mcp",
+  "description": "Moodle MCP server for read-only access to Moodle courses, due dates, assignments, grades, announcements and course content.",
+  "type": "mcp-server",
   "maintainers": [
     "AnonymousOnyx22"
   ]

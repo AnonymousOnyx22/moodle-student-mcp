@@ -1,6 +1,6 @@
 # moodle-student-mcp
 
-> Free, open source, read only MCP server that lets AI apps (Claude, ChatGPT, Cursor, Copilot and others) read a student's Moodle courses, due dates, grades and announcements. It cannot submit, edit or delete anything.
+> Moodle MCP server. Free, open source, read only. Lets AI apps (Claude, ChatGPT, Cursor, Copilot and others) read a student's Moodle courses, due dates, grades and announcements. It cannot submit, edit or delete anything.
 
 ## Setup
 - Needs MOODLE_BASE_URL and MOODLE_TOKEN.
