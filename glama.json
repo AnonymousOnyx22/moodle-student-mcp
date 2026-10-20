@@ -1,7 +1,7 @@
 {
   "$schema": "https://glama.ai/mcp/schemas/server.json",
   "name": "moodle-mcp",
-  "description": "Moodle MCP server for read-only access to Moodle courses, due dates, assignments, grades, announcements and course content.",
+  "description": "Moodle MCP server for students. A Model Context Protocol MCP server that gives AI apps like Claude, ChatGPT and Cursor read only access to Moodle courses: assignments, due dates, grades, announcements and course content.",
   "type": "mcp-server",
   "maintainers": [
     "AnonymousOnyx22"
