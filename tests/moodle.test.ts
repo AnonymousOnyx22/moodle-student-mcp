@@ -6,6 +6,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMoodleApi, flatten } from "../src/moodle.js";
 import { createServer } from "../src/server.js";
 import { normalizeBaseUrl } from "../src/config.js";
+import { setupMessage, type SetupProblemKey } from "../src/core/http.js";
 
 const now = Math.floor(Date.now() / 1000);
 let srv: http.Server;
@@ -24,6 +25,34 @@ beforeAll(async () => {
     if (url.pathname !== "/webservice/rest/server.php") {
       res.writeHead(404);
       return res.end();
+    }
+    if (q.wstoken === "http401") {
+      res.writeHead(401);
+      return res.end("Unauthorized");
+    }
+    if (q.wstoken === "http403") {
+      res.writeHead(403);
+      return res.end("Forbidden");
+    }
+    if (q.wstoken === "http404") {
+      res.writeHead(404);
+      return res.end("Not found");
+    }
+    if (q.wstoken === "htmlpage") {
+      res.writeHead(200, { "content-type": "text/html" });
+      return res.end("<html><body>Web services are not enabled for this site.</body></html>");
+    }
+    if (q.wstoken === "noauth") {
+      return send({ exception: "webservice_access_exception", errorcode: "accessexception", message: "Access control exception" });
+    }
+    if (q.wstoken === "noweb") {
+      return send({ exception: "moodle_exception", errorcode: "webservicesnotenabled", message: "Web services are not enabled for this site." });
+    }
+    if (q.wstoken === "noservice") {
+      return send({ exception: "moodle_exception", errorcode: "servicenotavailable", message: "Service not available" });
+    }
+    if (q.wstoken === "badrecord") {
+      return send({ exception: "moodle_exception", errorcode: "invalidrecord", message: "Invalid record ID (record not found)" });
     }
     if (q.wstoken !== "good") {
       return send({ exception: "moodle_exception", errorcode: "invalidtoken", message: "Invalid token - token not found" });
@@ -170,6 +199,48 @@ describe("moodle-student-mcp", () => {
     const { text, isError } = await call(await connect("bad"), "get_my_courses");
     expect(isError).toBe(true);
     expect(text).toContain("Not signed in");
+  });
+
+  it("raises each setup problem with its fix", async () => {
+    const cases: [string, SetupProblemKey][] = [
+      ["bad", "notSignedIn"],
+      ["noauth", "accessDenied"],
+      ["noweb", "webServicesNotEnabled"],
+      ["noservice", "webServicesNotEnabled"],
+      ["badrecord", "notFound"],
+    ];
+    for (const [token, key] of cases) {
+      const { text, isError } = await call(await connect(token), "get_my_courses");
+      expect(isError, token).toBe(true);
+      expect(text, token).toBe(setupMessage(key));
+    }
+  });
+
+  it("raises the same message for HTTP status errors", async () => {
+    const cases: [string, SetupProblemKey][] = [
+      ["http401", "notSignedIn"],
+      ["http403", "accessDenied"],
+      ["http404", "notFound"],
+    ];
+    for (const [token, key] of cases) {
+      const { text, isError } = await call(await connect(token), "get_my_courses");
+      expect(isError, token).toBe(true);
+      expect(text, token).toBe(setupMessage(key));
+    }
+  });
+
+  it("points at the Security keys page when the key is the problem", async () => {
+    const signedOut = (await call(await connect("bad"), "get_my_courses")).text;
+    expect(signedOut).toContain("Preferences > User account > Security keys");
+    const noWeb = (await call(await connect("noweb"), "get_my_courses")).text;
+    expect(noWeb).toContain("Preferences > User account > Security keys");
+    expect(noWeb).toContain("Web services not enabled");
+  });
+
+  it("reads an HTML error page as a setup problem", async () => {
+    const { text, isError } = await call(await connect("htmlpage"), "get_my_courses");
+    expect(isError).toBe(true);
+    expect(text).toBe(setupMessage("webServicesNotEnabled"));
   });
 
   it("normalizes school URLs", () => {

@@ -9,6 +9,67 @@ export class ApiError extends Error {
   }
 }
 
+/** Where a student copies the key for the Moodle mobile web service. */
+export const SECURITY_KEYS_PATH = "Preferences > User account > Security keys";
+
+export interface SetupProblem {
+  /** The opening words of the message the server raises. Also the first cell of its README troubleshooting row. */
+  head: string;
+  /** What to do about it. Also the second cell of its README troubleshooting row. */
+  fix: string;
+}
+
+/**
+ * The setup problems the server can name, each with the fix that goes with it.
+ * The README troubleshooting table lists the same head and fix for each one.
+ */
+export const SETUP_PROBLEMS = {
+  notSignedIn: {
+    head: "Not signed in",
+    fix: `Your key expired or was reset. Copy the new one from ${SECURITY_KEYS_PATH} and update MOODLE_TOKEN.`,
+  },
+  accessDenied: {
+    head: "Access denied",
+    fix: `Your school turned that feature off for students. If you copied the key yourself, make sure it is the Moodle mobile web service one on ${SECURITY_KEYS_PATH}.`,
+  },
+  webServicesNotEnabled: {
+    head: "Web services not enabled",
+    fix: `Your school hasn't turned on the mobile web service, so there is no Moodle mobile web service key on ${SECURITY_KEYS_PATH}. Ask your school to turn it on.`,
+  },
+  notFound: {
+    head: "Not found",
+    fix: "Check the course ID with get_my_courses.",
+  },
+  unreadableReply: {
+    head: "The school's server sent a reply this server can't read",
+    fix: "Check that MOODLE_BASE_URL points at your Moodle site's address.",
+  },
+} as const satisfies Record<string, SetupProblem>;
+
+export type SetupProblemKey = keyof typeof SETUP_PROBLEMS;
+
+/** The full message the server raises for a setup problem. */
+export function setupMessage(key: SetupProblemKey): string {
+  const problem = SETUP_PROBLEMS[key];
+  return `${problem.head}. ${problem.fix}`;
+}
+
+/** The Moodle error codes that come back with HTTP 200 and a message worth showing. */
+const MOODLE_ERROR_CODES: Record<string, SetupProblemKey> = {
+  invalidtoken: "notSignedIn",
+  requireloginerror: "notSignedIn",
+  accessexception: "accessDenied",
+  webservicesnotenabled: "webServicesNotEnabled",
+  servicenotavailable: "webServicesNotEnabled",
+  invalidrecord: "notFound",
+};
+
+/** The message for a Moodle error code, or undefined when the code is not one we know. */
+export function describeMoodleError(code: string): string | undefined {
+  const key = MOODLE_ERROR_CODES[code];
+  return key ? setupMessage(key) : undefined;
+}
+
 export interface ClientOptions {
   baseUrl: string;
   headers?: Record<string, string>;
@@ -49,6 +110,30 @@ function nextLink(header: string | null): string | null {
   return null;
 }
 
+/** Moodle sometimes answers with an HTML error page instead of JSON. */
+function describeBody(text: string): string {
+  const lower = text.toLowerCase();
+  if (lower.includes("web services are not enabled") || lower.includes("webservicesnotenabled")) {
+    return setupMessage("webServicesNotEnabled");
+  }
+  if (lower.includes("invalid token") || lower.includes("invalidtoken")) {
+    return setupMessage("notSignedIn");
+  }
+  return setupMessage("unreadableReply");
+}
+
+async function readJson<T>(res: Response): Promise<T> {
+  const text = await res.text().catch(() => "");
+  if (!text.trim()) {
+    throw new ApiError("The school's server sent an empty reply. Try again shortly.", res.status);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new ApiError(describeBody(text), res.status, text.slice(0, 500));
+  }
+}
+
 export function createClient(opts: ClientOptions): HttpClient {
   const doFetch = opts.fetchImpl ?? fetch;
   const timeout = opts.timeoutMs ?? 20000;
@@ -80,14 +165,14 @@ export function createClient(opts: ClientOptions): HttpClient {
   return {
     async get<T>(path: string, query?: Query): Promise<T> {
       const res = await request(buildUrl(opts.baseUrl, path, query, opts.defaultQuery));
-      return (await res.json()) as T;
+      return readJson<T>(res);
     },
     async getAll<T>(path: string, query?: Query, maxPages = 10): Promise<T[]> {
       const out: T[] = [];
       let url: string | null = buildUrl(opts.baseUrl, path, query, opts.defaultQuery);
       for (let page = 0; url && page < maxPages; page++) {
         const res: Response = await request(url);
-        const data = (await res.json()) as T | T[];
+        const data = await readJson<T | T[]>(res);
         if (Array.isArray(data)) out.push(...data);
         else out.push(data);
         url = nextLink(res.headers.get("link"));
@@ -100,11 +185,11 @@ export function createClient(opts: ClientOptions): HttpClient {
 export function describeStatus(status: number): string {
   switch (status) {
     case 401:
-      return "Not signed in. The access token is missing, expired or was revoked. Create a new one and update your config.";
+      return setupMessage("notSignedIn");
     case 403:
-      return "Access denied. Your school may have turned this feature off for students.";
+      return setupMessage("accessDenied");
     case 404:
-      return "Not found. Check the course or item ID.";
+      return setupMessage("notFound");
     case 429:
       return "Rate limited by the school's server. Wait a minute and try again.";
     default:

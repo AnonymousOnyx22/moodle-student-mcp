@@ -1,4 +1,4 @@
-import { ApiError, createClient, type HttpClient } from "./core/http.js";
+import { ApiError, createClient, describeMoodleError, type HttpClient } from "./core/http.js";
 
 export interface MoodleApi {
   call<T = any>(fn: string, params?: Record<string, unknown>): Promise<T>;
@@ -17,15 +17,6 @@ export function flatten(value: unknown, prefix = "", out: Record<string, string>
   return out;
 }
 
-const ERROR_TEXT: Record<string, string> = {
-  invalidtoken: "Not signed in. The token is missing, expired or was revoked. Create a new one and update your config.",
-  accessexception: "Access denied. Your school may have turned this feature off for students.",
-  webservicesnotenabled: "Your school has not turned on Moodle web services, so this server can't connect.",
-  servicenotavailable: "Your school has not turned on the web service this tool needs.",
-  invalidrecord: "Not found. Check the course or item ID.",
-  requireloginerror: "Not signed in. Create a new token and update your config.",
-};
-
 export function createMoodleApi(baseUrl: string, token: string, fetchImpl?: typeof fetch): MoodleApi {
   const http: HttpClient = createClient({
     baseUrl,
@@ -39,7 +30,7 @@ export function createMoodleApi(baseUrl: string, token: string, fetchImpl?: type
       const data = await http.get<any>("webservice/rest/server.php", { wsfunction: fn, ...flatten(params) });
       if (data && typeof data === "object" && !Array.isArray(data) && data.exception) {
         const code = String(data.errorcode ?? "");
-        const text = ERROR_TEXT[code] ?? `Moodle said: ${data.message ?? code}`;
+        const text = describeMoodleError(code) ?? `Moodle said: ${data.message ?? code}`;
         throw new ApiError(text, 200, JSON.stringify(data).slice(0, 300));
       }
       return data as T;

@@ -73,12 +73,15 @@ All tools are read only.
 
 ## Troubleshooting
 
+Every tool returns these messages when the setup is off. Each one comes with the fix.
+
 | Message | Fix |
 | --- | --- |
-| Not signed in | Your key expired or was reset. Copy the new one. |
-| Access denied | Your school turned that feature off for students. |
-| Web services not enabled | Your school hasn't turned on the mobile web service. |
+| Not signed in | Your key expired or was reset. Copy the new one from **Preferences > User account > Security keys** and update `MOODLE_TOKEN`. |
+| Access denied | Your school turned that feature off for students. If you copied the key yourself, make sure it is the Moodle mobile web service one on **Preferences > User account > Security keys**. |
+| Web services not enabled | Your school hasn't turned on the mobile web service, so there is no Moodle mobile web service key on **Preferences > User account > Security keys**. Ask your school to turn it on. |
 | Not found | Check the course ID with `get_my_courses`. |
+| The school's server sent a reply this server can't read | Check that `MOODLE_BASE_URL` points at your Moodle site's address. |
 
 ## Development
 

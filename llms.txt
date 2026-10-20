@@ -5,6 +5,7 @@
 ## Setup
 - Needs MOODLE_BASE_URL and MOODLE_TOKEN.
 - Copy the Moodle mobile web service key from Preferences, User account, Security keys.
+- If a tool reports Not signed in, Access denied or Web services not enabled, the message says what to change.
 - Run with npx -y moodle-student-mcp. Run `npx moodle-student-mcp doctor` to check the setup.
 
 ## Tools (all read only)

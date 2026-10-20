@@ -2,8 +2,10 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 import { tools } from "../src/tools.js";
+import { SETUP_PROBLEMS, SECURITY_KEYS_PATH } from "../src/core/http.js";
 
 const llms = readFileSync(new URL("../llms.txt", import.meta.url), "utf8");
+const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
 const glama = JSON.parse(readFileSync(new URL("../glama.json", import.meta.url), "utf8")) as {
   tools?: { name: string; parameters?: { name: string; required?: boolean }[]; example?: { name: string; arguments: unknown } }[];
 };
@@ -36,6 +38,39 @@ function isRequired(tool: (typeof tools)[number], key: string): boolean {
   for (const k of Object.keys(tool.inputSchema)) shape[k] = k === key ? tool.inputSchema[k] : z.any();
   return !z.object(shape).safeParse({}).success;
 }
+
+describe("README troubleshooting table matches the errors the server raises", () => {
+  const section = (readme.split("## Troubleshooting")[1] ?? "").split("\n## ")[0];
+  const rows = section
+    .split("\n")
+    .filter((line) => line.startsWith("| ") && !line.startsWith("| Message") && !line.startsWith("| ---"))
+    .map((line) => {
+      const cells = line.split("|").slice(1, -1).map((c) => c.trim().replace(/[`*]/g, ""));
+      return { head: cells[0], fix: cells[1] };
+    });
+
+  it("has one row for every setup problem the server can raise", () => {
+    expect(rows.length).toBe(Object.keys(SETUP_PROBLEMS).length);
+  });
+
+  it("gives each setup problem the same head and fix in the README", () => {
+    for (const problem of Object.values(SETUP_PROBLEMS)) {
+      const row = rows.find((r) => r.head === problem.head);
+      expect(row, `${problem.head} row in README`).toBeTruthy();
+      expect(row!.fix, `${problem.head} fix in README`).toBe(problem.fix);
+    }
+  });
+
+  it("names the Security keys page wherever a key is the fix", () => {
+    const keyFixes = ["notSignedIn", "accessDenied", "webServicesNotEnabled"];
+    for (const key of keyFixes) {
+      const problem = SETUP_PROBLEMS[key as keyof typeof SETUP_PROBLEMS];
+      expect(problem.fix, key).toContain(SECURITY_KEYS_PATH);
+      const row = rows.find((r) => r.head === problem.head);
+      expect(row!.fix, key).toContain(SECURITY_KEYS_PATH);
+    }
+  });
+});
 
 describe("llms.txt and glama.json match the real tool list", () => {
   it("llms.txt lists every tool and no extras", () => {
