@@ -1,17 +1,6 @@
 # Moodle MCP for students
 
-Ask your AI what's actually left to do in Moodle with the Moodle MCP server.
-
-This is a free, open source [Moodle MCP](https://modelcontextprotocol.io) server. It lets Claude, ChatGPT, Cursor and other AI apps read your Moodle courses, due dates, grades and announcements. It is **read only**. It can never submit, edit or delete anything.
-
-Works with Moodle sites that have the mobile web service turned on. Not affiliated with Moodle Pty Ltd.
-
-Free forever. No sign up and no subscription. Your login details only ever go to your own school.
-
-## Quick start
-
-1. In Moodle, open your profile menu, go to **Preferences > User account > Security keys**. Copy the key for **Moodle mobile web service**.
-2. Add this to your AI app's MCP config (for Claude Desktop that's `claude_desktop_config.json`):
+Add the server to your AI app with npx. Paste this into your MCP config (for Claude Desktop that's `claude_desktop_config.json`):
 
 ```json
 {
@@ -28,7 +17,25 @@ Free forever. No sign up and no subscription. Your login details only ever go to
 }
 ```
 
-3. Restart your AI app and ask something like "what's due this week?"
+Restart the app, then ask:
+
+- "What's due this week?"
+- "Is anything overdue?"
+- "What's my grade in Networking?"
+
+Ask your AI what's actually left to do in Moodle with the Moodle MCP server.
+
+This is a free, open source [Moodle MCP](https://modelcontextprotocol.io) server. It lets Claude, ChatGPT, Cursor and other AI apps read your Moodle courses, due dates, grades and announcements. It is **read only**. It can never submit, edit or delete anything.
+
+Works with Moodle sites that have the mobile web service turned on. Not affiliated with Moodle Pty Ltd.
+
+Free forever. No sign up and no subscription. Your login details only ever go to your own school.
+
+## Quick start
+
+1. In Moodle, open your profile menu, go to **Preferences > User account > Security keys**. Copy the key for **Moodle mobile web service**.
+2. Put your school's Moodle address and that key into the config block above.
+3. Restart your AI app and ask one of the questions above.
 
 To check your setup first, run `npx moodle-student-mcp doctor` with the two environment variables set.
 
@@ -36,6 +43,7 @@ To check your setup first, run `npx moodle-student-mcp doctor` with the two envi
 
 ## What you can ask
 
+- "What's due this week?"
 - "What's due in the next two weeks?"
 - "Is anything overdue?"
 - "What's my grade in each course, and what's in the gradebook for Networking?"
