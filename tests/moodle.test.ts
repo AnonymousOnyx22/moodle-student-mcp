@@ -104,6 +104,21 @@ describe("moodle-student-mcp", () => {
     for (const t of tools) expect(t.annotations?.readOnlyHint).toBe(true);
   });
 
+  it("describes every tool with the question it answers, its inputs and a sample prompt", async () => {
+    const { tools } = await (await connect()).listTools();
+    expect(tools.length).toBe(8);
+    for (const t of tools) {
+      expect(t.description, t.name).toMatch(/^Answers '/);
+      expect(t.description, t.name).toMatch(/Ask: '/);
+      const props = Object.keys((t.inputSchema as { properties?: object }).properties ?? {});
+      if (props.length) {
+        for (const p of props) expect(t.description, `${t.name} mentions ${p}`).toContain(p);
+      } else {
+        expect(t.description, t.name).toContain("No input.");
+      }
+    }
+  });
+
   it("lists current courses and hides old and hidden ones", async () => {
     const { text } = await call(await connect(), "get_my_courses");
     expect(text).toContain("Networking Basics");

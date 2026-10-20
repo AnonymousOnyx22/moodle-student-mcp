@@ -34,7 +34,8 @@ export const tools: ToolDef<Api>[] = [
   {
     name: "get_my_courses",
     title: "My courses",
-    description: "List the student's current Moodle courses with their IDs.",
+    description:
+      "Answers 'what courses am I enrolled in?' Lists each current Moodle course with the ID other tools take as course_id. No input. Ask: 'Which courses do I have this term?'",
     inputSchema: {},
     run: async (_args, api) => {
       const courses = await myCourses(api);
@@ -44,7 +45,8 @@ export const tools: ToolDef<Api>[] = [
   {
     name: "get_upcoming_due_dates",
     title: "Upcoming due dates",
-    description: "Things due in the next 60 days across all courses, soonest first.",
+    description:
+      "Answers 'what is due soon?' Lists up to 50 items due in the next 60 days across all current courses, soonest first, with the course name and due date. No input. Ask: 'What's due in the next two weeks?'",
     inputSchema: {},
     run: async (_args, api) => {
       const now = Math.floor(Date.now() / 1000);
@@ -63,7 +65,8 @@ export const tools: ToolDef<Api>[] = [
   {
     name: "get_overdue",
     title: "Overdue work",
-    description: "Past due items from the last 45 days that still need action.",
+    description:
+      "Answers 'is anything overdue?' Lists past due items from the last 45 days that still need action, with the course name and the date each was due. No input. Ask: 'Is anything overdue?'",
     inputSchema: {},
     run: async (_args, api) => {
       const now = Math.floor(Date.now() / 1000);
@@ -82,7 +85,8 @@ export const tools: ToolDef<Api>[] = [
   {
     name: "get_assignments",
     title: "Course assignments",
-    description: "Assignments for one course with due dates and submission status.",
+    description:
+      "Answers 'what do I still need to submit in this course?' Lists up to 25 assignments for one course with due dates and submission status: not submitted, draft, submitted or graded. Input: course_id, the ID from get_my_courses. Ask: 'Which assignments have I not submitted yet in Networking Basics?'",
     inputSchema: { course_id: courseId },
     run: async ({ course_id }, api) => {
       const r = await api.call<{ courses?: { assignments?: any[] }[] }>("mod_assign_get_assignments", { courseids: [course_id] });
@@ -104,7 +108,8 @@ export const tools: ToolDef<Api>[] = [
   {
     name: "get_my_grades",
     title: "My grades",
-    description: "Current grade for each course.",
+    description:
+      "Answers 'what's my grade in each course?' Shows the posted overall grade for every current course, or 'no grade posted yet'. No input. Ask: 'What's my grade in each course?'",
     inputSchema: {},
     run: async (_args, api) => {
       const courses = await myCourses(api);
@@ -124,7 +129,8 @@ export const tools: ToolDef<Api>[] = [
   {
     name: "get_course_grade_items",
     title: "Grade breakdown",
-    description: "Every graded item in a course with the mark and percentage.",
+    description:
+      "Answers 'what's in the gradebook for this course?' Lists every graded item for one course with the mark and percentage, including the course total when there is one. Input: course_id, the ID from get_my_courses. Ask: 'Show me the gradebook for Networking Basics.'",
     inputSchema: { course_id: courseId },
     run: async ({ course_id }, api) => {
       const r = await api.call<{ usergrades?: { gradeitems?: any[] }[] }>("gradereport_user_get_grade_items", {
@@ -144,7 +150,8 @@ export const tools: ToolDef<Api>[] = [
   {
     name: "get_course_content",
     title: "Course content",
-    description: "Sections and activities for a course.",
+    description:
+      "Answers 'what's in this course?' Lists the sections of one course, such as weeks or topics, with up to 40 activities in each, such as pages, quizzes and forums. Input: course_id, the ID from get_my_courses. Ask: 'What materials are posted in Networking Basics?'",
     inputSchema: { course_id: courseId },
     run: async ({ course_id }, api) => {
       const sections = await api.call<any[]>("core_course_get_contents", { courseid: course_id });
@@ -160,7 +167,8 @@ export const tools: ToolDef<Api>[] = [
   {
     name: "get_announcements",
     title: "Announcements",
-    description: "Recent announcements. Pass course_ids to limit it, or leave empty for all current courses.",
+    description:
+      "Answers 'any new announcements?' Lists the latest news forum posts with subject and text, up to 5 posts from each of up to 10 news forums. Input: course_ids, an optional array of course IDs to limit the search; leave it out to cover all current courses. Ask: 'Any new announcements from my teachers?'",
     inputSchema: { course_ids: z.array(courseId).optional() },
     run: async ({ course_ids }, api) => {
       const ids: (string | number)[] = course_ids?.length ? course_ids : (await myCourses(api)).map((c) => c.id);
