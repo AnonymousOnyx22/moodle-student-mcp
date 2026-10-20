@@ -91,6 +91,8 @@ npm run build
 npm test
 ```
 
+Development needs Node 22.12 or newer, because the test runner needs it. The server itself runs on Node 20 or newer.
+
 Tests run against a fake Moodle server, so they need no account or network.
 
 ## More free student MCP servers
