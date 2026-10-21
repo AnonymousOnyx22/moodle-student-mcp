@@ -22,6 +22,7 @@
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/src/index.js', 0o755)\"",
     "test": "vitest run",
+    "demo": "npm run --silent build && node build/scripts/print-demo.js",
     "start": "node build/src/index.js",
     "prepublishOnly": "npm run build && npm test"
   },
