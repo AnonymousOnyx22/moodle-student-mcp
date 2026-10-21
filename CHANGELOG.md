@@ -18,6 +18,7 @@
 
 ## Unreleased
 
+- The npm package now ships server.json and glama.json next to llms.txt, so the registry and Glama metadata travel with the tarball.
 - Dependencies updated. Vitest is on 5 now, and the Model Context Protocol SDK and zod are on their newest releases. The older Vitest release had security advisories that npm reported. Those are gone now.
 - Setup errors now carry the fix with them. The server raises the same messages as the README troubleshooting table for a wrong key, missing web services, access problems, an unknown course ID and a reply it can't read. The key messages name the Security keys page.
 

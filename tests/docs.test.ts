@@ -1,11 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { z } from "zod";
 import { tools } from "../src/tools.js";
 import { SETUP_PROBLEMS, SECURITY_KEYS_PATH } from "../src/core/http.js";
 
 const llms = readFileSync(new URL("../llms.txt", import.meta.url), "utf8");
 const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
+const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+  name: string;
+  files?: string[];
+};
+const serverJson = JSON.parse(readFileSync(new URL("../server.json", import.meta.url), "utf8")) as {
+  packages: { identifier: string }[];
+};
 const glama = JSON.parse(readFileSync(new URL("../glama.json", import.meta.url), "utf8")) as {
   tools?: { name: string; parameters?: { name: string; required?: boolean }[]; example?: { name: string; arguments: unknown } }[];
 };
@@ -38,6 +45,25 @@ function isRequired(tool: (typeof tools)[number], key: string): boolean {
   for (const k of Object.keys(tool.inputSchema)) shape[k] = k === key ? tool.inputSchema[k] : z.any();
   return !z.object(shape).safeParse({}).success;
 }
+
+describe("the published package carries the metadata files", () => {
+  it("lists server.json and glama.json among the package files", () => {
+    expect(pkg.files).toContain("server.json");
+    expect(pkg.files).toContain("glama.json");
+  });
+
+  it("has every file it lists on disk", () => {
+    for (const name of pkg.files ?? []) {
+      const path = new URL(`../${name}`, import.meta.url);
+      if (existsSync(path) && statSync(path).isDirectory()) continue;
+      expect(existsSync(path), name).toBe(true);
+    }
+  });
+
+  it("points server.json at the npm package it ships in", () => {
+    expect(serverJson.packages[0].identifier).toBe(pkg.name);
+  });
+});
 
 describe("README troubleshooting table matches the errors the server raises", () => {
   const section = (readme.split("## Troubleshooting")[1] ?? "").split("\n## ")[0];

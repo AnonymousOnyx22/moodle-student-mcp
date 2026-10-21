@@ -11,6 +11,8 @@
     "build/src",
     "README.md",
     "llms.txt",
+    "server.json",
+    "glama.json",
     "CHANGELOG.md",
     "LICENSE"
   ],
