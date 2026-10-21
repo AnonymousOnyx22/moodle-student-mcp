@@ -16,7 +16,7 @@
 - Shorten the server.json description to 100 characters (it is 138)
 - search-rank
 
-## Unreleased
+## 0.1.4
 
 - The README Tools table is checked against src/tools.ts in the tests. A new tool needs a row in that table, and every row names the parameters the tool takes.
 - The README has an Install section with one line for Claude Code, Cursor and VS Code, next to the Claude Desktop config block. A reader can copy one line and start the server instead of writing the JSON by hand.
