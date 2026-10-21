@@ -18,6 +18,7 @@
 
 ## Unreleased
 
+- The README Tools table is checked against src/tools.ts in the tests. A new tool needs a row in that table, and every row names the parameters the tool takes.
 - The README has an Install section with one line for Claude Code, Cursor and VS Code, next to the Claude Desktop config block. A reader can copy one line and start the server instead of writing the JSON by hand.
 - New tool get_missing_work. It answers "what do I still owe?" in one call. It looks through the assignments of your current courses and lists the ones you have not handed in yet, drafts included, with the course name and the due date. It takes the same optional course_ids filter as the other tools. A course the school server will not open is named at the end of the list and the rest still shows.
 - server.json now carries the display title, the npx launch and the two environment variables. A registry page or an add from registry client asks for MOODLE_BASE_URL and MOODLE_TOKEN instead of starting the server without them and failing.

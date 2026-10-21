@@ -221,15 +221,15 @@ All tools are read only.
 | Tool | What it does |
 | --- | --- |
 | `get_my_courses` | Your current courses and their IDs |
-| `get_upcoming_due_dates` | Items that still need action and are due in the next 60 days, soonest first. Plain course events such as 'Course starts' are left out. Takes an optional list of course IDs |
-| `get_overdue` | Past due items that still need action. Takes an optional list of course IDs |
-| `get_assignments` | Assignments for a course with due dates and submission status |
-| `get_missing_work` | Assignments you have not handed in yet, drafts included, with the course name and the due date. Takes an optional list of course IDs |
+| `get_upcoming_due_dates` | Items that still need action and are due in the next 60 days, soonest first. Plain course events such as 'Course starts' are left out. Takes an optional `course_ids` list of course IDs |
+| `get_overdue` | Past due items that still need action. Takes an optional `course_ids` list of course IDs |
+| `get_assignments` | Assignments for a course with due dates and submission status. Takes a `course_id` from `get_my_courses` |
+| `get_missing_work` | Assignments you have not handed in yet, drafts included, with the course name and the due date. Takes an optional `course_ids` list of course IDs |
 | `get_my_grades` | Current grade for each course |
-| `get_course_grade_items` | Every graded item in a course with mark and percentage |
-| `get_course_content` | Sections and activities for a course |
-| `get_file` | Download a course file from your school's Moodle site and return its text |
-| `get_announcements` | Recent announcements, with any course Moodle will not open left out |
+| `get_course_grade_items` | Every graded item in a course with mark and percentage. Takes a `course_id` from `get_my_courses` |
+| `get_course_content` | Sections and activities for a course. Takes a `course_id` from `get_my_courses` |
+| `get_file` | Download a course file from your school's Moodle site and return its text. Takes a `file_url` from `get_course_content` |
+| `get_announcements` | Recent announcements, with any course Moodle will not open left out. Takes an optional `course_ids` list of course IDs |
 
 ## Privacy and security
 

@@ -49,6 +49,31 @@ function parseLlmsTools(text: string): LlmsTool[] {
 const llmsTools = parseLlmsTools(llms);
 const glamaTools = glama.tools ?? [];
 
+interface ReadmeTool {
+  name: string;
+  text: string;
+}
+
+/** The rows of the README Tools table. */
+function parseReadmeTools(text: string): ReadmeTool[] {
+  const section = (text.split("## Tools")[1] ?? "").split("\n## ")[0];
+  return section
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("|"))
+    .map((line) =>
+      line
+        .replace(/^\|/, "")
+        .replace(/\|$/, "")
+        .split("|")
+        .map((cell) => cell.trim()),
+    )
+    .filter((cells) => cells.length === 2 && cells[0] !== "Tool" && !/^-{2,}$/.test(cells[0]))
+    .map(([name, text]) => ({ name: name.replace(/`/g, ""), text }));
+}
+
+const readmeTools = parseReadmeTools(readme);
+
 /** A property is required when an object missing only that property fails to parse. */
 function isRequired(tool: (typeof tools)[number], key: string): boolean {
   const shape: Record<string, z.ZodTypeAny> = {};
@@ -179,6 +204,28 @@ describe("llms.txt and glama.json match the real tool list", () => {
       for (const p of params) expect(p.required, `${tool.name}.${p.name} required flag`).toBe(isRequired(tool, p.name));
       expect(doc.example?.name).toBe(tool.name);
       expect(z.object(tool.inputSchema).safeParse(doc.example?.arguments).success, `${tool.name} example`).toBe(true);
+    });
+  }
+});
+
+describe("the README Tools table matches the real tool list", () => {
+  it("has a row for every tool the server registers and no others", () => {
+    expect(readmeTools.map((r) => r.name).sort()).toEqual(tools.map((t) => t.name).sort());
+  });
+
+  it("says what every tool does", () => {
+    for (const row of readmeTools) {
+      expect(row.text.length, `${row.name} description in README`).toBeGreaterThan(20);
+    }
+  });
+
+  for (const tool of tools) {
+    it(`the README row for ${tool.name} names the parameters it takes`, () => {
+      const row = readmeTools.find((r) => r.name === tool.name);
+      expect(row, `${tool.name} row in README`).toBeTruthy();
+      for (const p of Object.keys(tool.inputSchema)) {
+        expect(new RegExp(`\\b${p}\\b`).test(row!.text), `${tool.name}.${p} in README`).toBe(true);
+      }
     });
   }
 });
