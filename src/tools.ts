@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { MoodleApi } from "./moodle.js";
 import { type ToolDef, bullets, fmtUnix, stripHtml } from "./core/tools.js";
-import { ApiError, describeStatus, isSiteWideError, statusSetupKey } from "./core/http.js";
+import { ApiError, describeStatus, isSiteWideError, sameOrigin, statusSetupKey } from "./core/http.js";
 
 type Api = MoodleApi;
 
@@ -278,12 +278,24 @@ export const tools: ToolDef<Api>[] = [
     name: "get_file",
     title: "Course file",
     description:
-      "Answers 'what does this course file say?' Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url and returns its readable text. Input: file_url, the link from get_course_content. Ask: 'Read the Week 3 slides PDF.'",
+      "Answers 'what does this course file say?' Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url and returns its readable text. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server. Input: file_url, the link from get_course_content. Ask: 'Read the Week 3 slides PDF.'",
     inputSchema: { file_url: z.string().describe("URL of the course file to download. Use the link from get_course_content.") },
     run: async ({ file_url }, api) => {
       let url = String(file_url).trim();
       if (!/^https?:\/\//i.test(url)) url = api.baseUrl + "/" + url.replace(/^\/+/, "");
-      const u = new URL(url);
+      let u: URL;
+      try {
+        u = new URL(url);
+      } catch {
+        throw new ApiError("That is not a link I can read. Use the link from get_course_content.", 0);
+      }
+      // The key only ever travels to the school's own Moodle server.
+      if (!sameOrigin(u.toString(), api.baseUrl)) {
+        throw new ApiError(
+          "That link points at another server, so your Moodle key was not sent with it. get_file only reads files from your school's Moodle site. Use the link from get_course_content.",
+          0,
+        );
+      }
       if (!u.searchParams.has("token") && api.token) u.searchParams.set("token", api.token);
       const res = await fetch(u.toString());
       if (!res.ok) throw new ApiError(describeStatus(res.status), res.status, undefined, statusSetupKey(res.status));

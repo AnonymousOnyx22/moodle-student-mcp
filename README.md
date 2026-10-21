@@ -172,13 +172,14 @@ All tools are read only.
 | `get_my_grades` | Current grade for each course |
 | `get_course_grade_items` | Every graded item in a course with mark and percentage |
 | `get_course_content` | Sections and activities for a course |
-| `get_file` | Download a course file and return its text |
+| `get_file` | Download a course file from your school's Moodle site and return its text |
 | `get_announcements` | Recent announcements, with any course Moodle will not open left out |
 
 ## Privacy and security
 
 - Your key stays on your computer. It is only sent to your own school's Moodle address.
 - Nothing is sent to any other server by this project.
+- `get_file` only downloads a link that points at your school's Moodle address. A link that points somewhere else is refused, so a link in a course page or an announcement can never take your key.
 - Every tool is marked read only. You can reset your key any time on the Security keys page.
 
 ## Troubleshooting

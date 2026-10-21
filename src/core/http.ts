@@ -84,6 +84,28 @@ export function isSiteWideError(err: unknown): boolean {
   return err instanceof ApiError && err.setup !== undefined && SITE_WIDE_PROBLEMS.includes(err.setup);
 }
 
+/**
+ * The origin of a URL, such as https://moodle.school.edu. It is empty when the
+ * URL cannot be read at all.
+ */
+function originOf(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * True when a request to the URL would go to the same place as the school's
+ * Moodle server. The token may only travel to that place.
+ */
+export function sameOrigin(url: string, baseUrl: string): boolean {
+  const target = originOf(url);
+  if (!target || target === "null") return false;
+  return target === originOf(baseUrl);
+}
+
 export interface ClientOptions {
   baseUrl: string;
   headers?: Record<string, string>;

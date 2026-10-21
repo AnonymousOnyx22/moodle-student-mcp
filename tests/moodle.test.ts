@@ -6,7 +6,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createMoodleApi, flatten } from "../src/moodle.js";
 import { createServer } from "../src/server.js";
 import { normalizeBaseUrl } from "../src/config.js";
-import { setupMessage, type SetupProblemKey } from "../src/core/http.js";
+import { sameOrigin, setupMessage, type SetupProblemKey } from "../src/core/http.js";
 
 const now = Math.floor(Date.now() / 1000);
 let srv: http.Server;
@@ -14,12 +14,31 @@ let base = "";
 const seenParams: Record<string, string>[] = [];
 /** The forum whose discussions call fails, 0 for none. */
 let failForum = 0;
+/** The file requests the school server received. */
+const seenFiles: { path: string; token?: string }[] = [];
+/** A server that stands in for another site on the internet. */
+let other: http.Server;
+let otherUrl = "";
+const otherHits: string[] = [];
 
 beforeAll(async () => {
+  other = http.createServer((req, res) => {
+    otherHits.push(req.url ?? "");
+    res.writeHead(200, { "content-type": "text/plain" });
+    res.end("stolen");
+  });
+  await new Promise<void>((r) => other.listen(0, "127.0.0.1", r));
+  otherUrl = `http://127.0.0.1:${(other.address() as AddressInfo).port}`;
+
   srv = http.createServer((req, res) => {
     const url = new URL(req.url!, "http://x");
     const q = Object.fromEntries(url.searchParams.entries());
     seenParams.push(q);
+    if (url.pathname.startsWith("/webservice/pluginfile.php")) {
+      seenFiles.push({ path: url.pathname, token: q.token });
+      res.writeHead(200, { "content-type": "text/plain" });
+      return res.end("Week 3 slides: how a packet travels");
+    }
     const send = (data: unknown) => {
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify(data));
@@ -139,7 +158,10 @@ beforeAll(async () => {
   base = `http://127.0.0.1:${(srv.address() as AddressInfo).port}`;
 });
 
-afterAll(() => new Promise<void>((r) => srv.close(() => r())));
+afterAll(() => Promise.all([
+  new Promise<void>((r) => srv.close(() => r())),
+  new Promise<void>((r) => other.close(() => r())),
+]));
 
 async function connect(token = "good") {
   const server = createServer(createMoodleApi(base, token));
@@ -265,6 +287,53 @@ describe("moodle-student-mcp", () => {
     const ann = (await call(c, "get_announcements")).text;
     expect(ann).toContain("Welcome");
     expect(ann).toContain("Hello class");
+  });
+
+  it("downloads a file from the school's own site and sends the key there", async () => {
+    seenFiles.length = 0;
+    const { text, isError } = await call(await connect(), "get_file", {
+      file_url: `${base}/webservice/pluginfile.php/1/mod_resource/content/0/slides.pdf`,
+    });
+    expect(isError).toBe(false);
+    expect(text).toContain("Week 3 slides");
+    expect(seenFiles).toHaveLength(1);
+    expect(seenFiles[0].token).toBe("good");
+  });
+
+  it("downloads a file from a link with no host in it", async () => {
+    seenFiles.length = 0;
+    const { text, isError } = await call(await connect(), "get_file", {
+      file_url: "/webservice/pluginfile.php/1/mod_resource/content/0/slides.pdf",
+    });
+    expect(isError).toBe(false);
+    expect(text).toContain("Week 3 slides");
+    expect(seenFiles[0].token).toBe("good");
+  });
+
+  it("refuses a file link on another server and keeps the key off it", async () => {
+    otherHits.length = 0;
+    const { text, isError } = await call(await connect(), "get_file", { file_url: `${otherUrl}/steal` });
+    expect(isError).toBe(true);
+    expect(text).toContain("your Moodle key was not sent");
+    expect(otherHits).toEqual([]);
+  });
+
+  it("refuses a file link that only looks like the school one", async () => {
+    const { text, isError } = await call(await connect(), "get_file", {
+      file_url: "https://moodle.school.edu.evil.example/slides.pdf",
+    });
+    expect(isError).toBe(true);
+    expect(text).toContain("your Moodle key was not sent");
+  });
+
+  it("knows which addresses are the school's own", () => {
+    expect(sameOrigin("https://moodle.school.edu/x", "https://moodle.school.edu")).toBe(true);
+    expect(sameOrigin("https://moodle.school.edu:443/x", "https://moodle.school.edu")).toBe(true);
+    expect(sameOrigin("/pluginfile.php/1/x", "https://moodle.school.edu")).toBe(false);
+    expect(sameOrigin("https://evil.example/x", "https://moodle.school.edu")).toBe(false);
+    expect(sameOrigin("https://moodle.school.edu.evil.example/x", "https://moodle.school.edu")).toBe(false);
+    expect(sameOrigin("https://files.moodle.school.edu/x", "https://moodle.school.edu")).toBe(false);
+    expect(sameOrigin("http://moodle.school.edu/x", "https://moodle.school.edu")).toBe(false);
   });
 
   it("keeps the announcements when one course will not open", async () => {
