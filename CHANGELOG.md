@@ -1,21 +1,5 @@
 # Changelog
 
-## 0.1.3
-
-- Small fixes and clearer docs
-
-## 0.1.2
-
-- Not in npm top 40 for "moodle mcp"
-- Raise the README setup errors with fixes and the Security keys path
-- Update vitest to 5 and verify the 0.1.1 version across the pack
-- Audit llms.txt and glama.json so all eight tools appear with parameters and one example call each
-- Give each of the 8 tools in src/tools.ts a description with concrete inputs and a sample user prompt
-- Rebuild the README first screen as an npx install block plus three example prompts above the fold
-- Rewrite package.json description to lead with the phrase 'Moodle MCP' and add exact-match keywords
-- Shorten the server.json description to 100 characters (it is 138)
-- search-rank
-
 ## 0.1.4
 
 - The README Tools table is checked against src/tools.ts in the tests. A new tool needs a row in that table, and every row names the parameters the tool takes.
@@ -31,6 +15,22 @@
 - The npm package now ships server.json and glama.json next to llms.txt, so the registry and Glama metadata travel with the tarball.
 - Dependencies updated. Vitest is on 5 now, and the Model Context Protocol SDK and zod are on their newest releases. The older Vitest release had security advisories that npm reported. Those are gone now.
 - Setup errors now carry the fix with them. The server raises the same messages as the README troubleshooting table for a wrong key, missing web services, access problems, an unknown course ID and a reply it can't read. The key messages name the Security keys page.
+
+## 0.1.3
+
+- Small fixes and clearer docs
+
+## 0.1.2
+
+- Not in npm top 40 for "moodle mcp"
+- Raise the README setup errors with fixes and the Security keys path
+- Update vitest to 5 and verify the 0.1.1 version across the pack
+- Audit llms.txt and glama.json so all eight tools appear with parameters and one example call each
+- Give each of the 8 tools in src/tools.ts a description with concrete inputs and a sample user prompt
+- Rebuild the README first screen as an npx install block plus three example prompts above the fold
+- Rewrite package.json description to lead with the phrase 'Moodle MCP' and add exact-match keywords
+- Shorten the server.json description to 100 characters (it is 138)
+- search-rank
 
 ## 0.1.1
 
