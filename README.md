@@ -95,6 +95,8 @@ Development needs Node 22.12 or newer, because the test runner needs it. The ser
 
 Tests run against a fake Moodle server, so they need no account or network.
 
+If this saved you time digging through Moodle, please [give the repo a star](https://github.com/AnonymousOnyx22/moodle-student-mcp). It sits at 0 stars, and one star helps the next student find it.
+
 ## More free student MCP servers
 
 All free, open source and read only where they touch your accounts. Browse the full list at [brightspacemcp.com/more-mcps](https://brightspacemcp.com/more-mcps/).
