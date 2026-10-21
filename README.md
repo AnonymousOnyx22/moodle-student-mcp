@@ -1,6 +1,54 @@
 # Moodle MCP for students
 
-Add the server to your AI app with npx. Paste this into your MCP config (for Claude Desktop that's `claude_desktop_config.json`):
+Add the server to your AI app with npx. Put your school's Moodle address and your key in the line for your app below, then run it.
+
+Ask your AI what's actually left to do in Moodle with the Moodle MCP server.
+
+This is a free, open source [Moodle MCP](https://modelcontextprotocol.io) server. It lets Claude, ChatGPT, Cursor and other AI apps read your Moodle courses, due dates, grades and announcements. It is **read only**. It can never submit, edit or delete anything.
+
+Works with Moodle sites that have the mobile web service turned on. Not affiliated with Moodle Pty Ltd.
+
+Free forever. No sign up and no subscription. Your login details only ever go to your own school.
+
+## Install
+
+### Claude Code
+
+Run this in a terminal:
+
+```bash
+claude mcp add moodle --env MOODLE_BASE_URL=https://moodle.yourschool.edu --env MOODLE_TOKEN=your-key -- npx -y moodle-student-mcp
+```
+
+Add `--scope user` if you want the server in every project.
+
+### Cursor
+
+Run this in a terminal. Cursor keeps its servers in `mcp.json`, so this line writes the server into `~/.cursor/mcp.json` and leaves the servers you already have alone. On Windows that file is `%USERPROFILE%\.cursor\mcp.json`.
+
+```bash
+node -e "const fs=require('fs'),os=require('os'),path=require('path'),file=path.join(os.homedir(),'.cursor','mcp.json');let config={};try{config=JSON.parse(fs.readFileSync(file,'utf8'))}catch(error){}config.mcpServers={...(config.mcpServers||{}),moodle:{type:'stdio',command:'npx',args:['-y','moodle-student-mcp'],env:{MOODLE_BASE_URL:'https://moodle.yourschool.edu',MOODLE_TOKEN:'your-key'}}};fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(config,null,2));"
+```
+
+### VS Code
+
+Run this in a terminal:
+
+```bash
+code --add-mcp "{\"name\":\"moodle\",\"type\":\"stdio\",\"command\":\"npx\",\"args\":[\"-y\",\"moodle-student-mcp\"],\"env\":{\"MOODLE_BASE_URL\":\"https://moodle.yourschool.edu\",\"MOODLE_TOKEN\":\"your-key\"}}"
+```
+
+The quotes inside the JSON are escaped, so the command runs the same way in a Mac or Linux terminal and in the Windows Command Prompt. In PowerShell on Windows, use this line instead:
+
+```powershell
+code --add-mcp '{\"name\":\"moodle\",\"type\":\"stdio\",\"command\":\"npx\",\"args\":[\"-y\",\"moodle-student-mcp\"],\"env\":{\"MOODLE_BASE_URL\":\"https://moodle.yourschool.edu\",\"MOODLE_TOKEN\":\"your-key\"}}'
+```
+
+This adds the server to your user profile, so it is there in every project.
+
+### Claude Desktop
+
+Paste this into your MCP config (for Claude Desktop that's `claude_desktop_config.json`):
 
 ```json
 {
@@ -10,27 +58,19 @@ Add the server to your AI app with npx. Paste this into your MCP config (for Cla
       "args": ["-y", "moodle-student-mcp"],
       "env": {
         "MOODLE_BASE_URL": "https://moodle.yourschool.edu",
-        "MOODLE_TOKEN": "paste-your-key-here"
+        "MOODLE_TOKEN": "your-key"
       }
     }
   }
 }
 ```
 
-Restart the app, then ask:
+Restart the app if it was already running, then ask:
 
 - "What's due this week?"
 - "Is anything overdue?"
 - "What work am I still missing?"
 - "What's my grade in Networking?"
-
-Ask your AI what's actually left to do in Moodle with the Moodle MCP server.
-
-This is a free, open source [Moodle MCP](https://modelcontextprotocol.io) server. It lets Claude, ChatGPT, Cursor and other AI apps read your Moodle courses, due dates, grades and announcements. It is **read only**. It can never submit, edit or delete anything.
-
-Works with Moodle sites that have the mobile web service turned on. Not affiliated with Moodle Pty Ltd.
-
-Free forever. No sign up and no subscription. Your login details only ever go to your own school.
 
 ## Demo
 
@@ -155,7 +195,7 @@ The app replies: Three announcements. Lab 3 is due Friday, so bring your laptop 
 ## Quick start
 
 1. In Moodle, open your profile menu, go to **Preferences > User account > Security keys**. Copy the key for **Moodle mobile web service**.
-2. Put your school's Moodle address and that key into the config block above.
+2. Put your school's Moodle address and that key into the command or the config block above.
 3. Restart your AI app and ask one of the questions above.
 
 To check your setup first, run `npx moodle-student-mcp doctor` with the two environment variables set.
