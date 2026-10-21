@@ -32,6 +32,11 @@ Lists up to 25 assignments for one course with due dates and submission status: 
 Parameters: course_id (required, Moodle course ID from get_my_courses, string or number).
 Example call: `{"name":"get_assignments","arguments":{"course_id":11}}`
 
+### get_missing_work
+Lists the assignments in your courses that you have not handed in yet, with the course name and the due date. Drafts that were never handed in are included, and work that was already handed in or graded is left out. Up to 25 assignments in each course are checked and the list holds up to 50 items.
+Parameters: course_ids (optional, array of course IDs from get_my_courses to limit the list, string or number items; leave it out to cover all current courses).
+Example call: `{"name":"get_missing_work","arguments":{}}`
+
 ### get_my_grades
 Shows the posted overall grade for every current course, or "no grade posted yet".
 Parameters: none.

@@ -105,14 +105,31 @@ beforeAll(async () => {
           { name: "Course ends", timesort: now + 500000, courseid: 11, course: { id: 11, fullname: "Networking Basics" } },
         ] });
       }
-      case "mod_assign_get_assignments":
-        return send({ courses: [{ assignments: [
-          { id: 1, name: "Lab 3", duedate: now + 5000 },
-          { id: 2, name: "Lab 2", duedate: now - 5000 },
-          { id: 3, name: "Lab 1", duedate: now - 9000 },
-        ] }] });
+      case "mod_assign_get_assignments": {
+        const ids = Object.keys(q).filter((k) => k.startsWith("courseids[")).map((k) => q[k]);
+        const byCourse: Record<string, unknown[]> = {
+          "11": [
+            { id: 1, name: "Lab 3", duedate: now + 5000 },
+            { id: 2, name: "Lab 2", duedate: now - 5000 },
+            { id: 3, name: "Lab 1", duedate: now - 9000 },
+          ],
+          "14": [
+            { id: 4, name: "Essay 2", duedate: now - 2000 },
+            { id: 5, name: "Reading list", duedate: now + 1000 },
+            { id: 6, name: "Group project", duedate: now + 3000 },
+          ],
+        };
+        if (ids.includes("12")) {
+          return send({ exception: "moodle_exception", errorcode: "invalidrecord", message: "Invalid record ID (record not found)" });
+        }
+        return send({ courses: [{ assignments: ids.flatMap((id) => byCourse[id] ?? []) }] });
+      }
       case "mod_assign_get_submission_status":
-        if (q.assignid === "1") return send({ lastattempt: { submission: { status: "new" } } });
+        if (q.assignid === "1" || q.assignid === "4") return send({ lastattempt: { submission: { status: "new" } } });
+        if (q.assignid === "5") return send({ lastattempt: { submission: { status: "draft" } } });
+        if (q.assignid === "6") {
+          return send({ exception: "moodle_exception", errorcode: "invalidrecord", message: "Invalid record ID (record not found)" });
+        }
         if (q.assignid === "2") return send({ lastattempt: { submission: { status: "submitted" } } });
         return send({ lastattempt: { submission: { status: "submitted" } }, feedback: { gradefordisplay: "8.00 / 10.00" } });
       case "gradereport_overview_get_course_grades":
@@ -181,13 +198,13 @@ async function call(client: Client, name: string, args: Record<string, unknown> 
 describe("moodle-student-mcp", () => {
   it("exposes only read-only tools", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(9);
+    expect(tools.length).toBe(10);
     for (const t of tools) expect(t.annotations?.readOnlyHint).toBe(true);
   });
 
   it("describes every tool with the question it answers, its inputs and a sample prompt", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(9);
+    expect(tools.length).toBe(10);
     for (const t of tools) {
       expect(t.description, t.name).toMatch(/^Answers '/);
       expect(t.description, t.name).toMatch(/Ask: '/);
@@ -280,6 +297,51 @@ describe("moodle-student-mcp", () => {
     await call(await connect(), "get_assignments", { course_id: 11 });
     expect(seenParams.some((p) => p.wsfunction === "mod_assign_get_assignments" && p["courseids[0]"] === "11")).toBe(true);
     expect(flatten({ courseids: [1, 2], opts: { a: 1 } })).toEqual({ "courseids[0]": "1", "courseids[1]": "2", "opts[a]": "1" });
+  });
+
+  it("lists the work that was never handed in", async () => {
+    const { text, isError } = await call(await connect(), "get_missing_work");
+    expect(isError).toBe(false);
+    expect(text).toMatch(/Essay 2 \(Data Structures\) was due .* not submitted/);
+    expect(text).toMatch(/Lab 3 \(Networking Basics\) is due .* not submitted/);
+    expect(text).toMatch(/Reading list \(Data Structures\) is due .* draft, not submitted/);
+  });
+
+  it("leaves out work that was already handed in or graded", async () => {
+    const { text } = await call(await connect(), "get_missing_work");
+    expect(text).not.toContain("Lab 2");
+    expect(text).not.toContain("Lab 1");
+  });
+
+  it("limits missing work to the courses asked for", async () => {
+    const { text } = await call(await connect(), "get_missing_work", { course_ids: [11] });
+    expect(text).toContain("Lab 3");
+    expect(text).not.toContain("Essay 2");
+  });
+
+  it("says when there is no missing work", async () => {
+    const { text } = await call(await connect(), "get_missing_work", { course_ids: [99] });
+    expect(text).toBe("No missing work found.");
+  });
+
+  it("keeps the missing work when one course will not open", async () => {
+    const { text, isError } = await call(await connect(), "get_missing_work", { course_ids: [11, 12] });
+    expect(isError).toBe(false);
+    expect(text).toContain("Lab 3");
+    expect(text).toContain("Could not read course 12");
+    expect(text).toContain("Invalid record ID (record not found)");
+  });
+
+  it("says when the submission status of an assignment cannot be read", async () => {
+    const { text } = await call(await connect(), "get_missing_work");
+    expect(text).not.toContain("Group project");
+    expect(text).toContain("Could not read the submission status of 1 assignment.");
+  });
+
+  it("reports a sign in problem instead of an empty list of missing work", async () => {
+    const { text, isError } = await call(await connect("bad"), "get_missing_work");
+    expect(isError).toBe(true);
+    expect(text).toBe(setupMessage("notSignedIn"));
   });
 
   it("reports grades only for current courses", async () => {

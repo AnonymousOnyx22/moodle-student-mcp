@@ -18,12 +18,13 @@
 
 ## Unreleased
 
+- New tool get_missing_work. It answers "what do I still owe?" in one call. It looks through the assignments of your current courses and lists the ones you have not handed in yet, drafts included, with the course name and the due date. It takes the same optional course_ids filter as the other tools. A course the school server will not open is named at the end of the list and the rest still shows.
 - server.json now carries the display title, the npx launch and the two environment variables. A registry page or an add from registry client asks for MOODLE_BASE_URL and MOODLE_TOKEN instead of starting the server without them and failing.
 
 - get_upcoming_due_dates now lists only the items that need action. Plain course events such as 'Course starts' and 'Course ends' are left out, the same way get_overdue leaves out events with nothing to do.
 - get_file only downloads a link that points at your school's Moodle site. A link from a course page or an announcement that points at another server is refused, so your key can no longer be sent to a third party.
 - get_upcoming_due_dates and get_overdue take an optional course_ids list, the same filter get_announcements already had. A question about one course no longer brings back every course.
-- The README has a demo transcript. It shows six questions with the tool calls and the exact text the tools answer, copied from a run against the test Moodle site. `npm run demo` prints the transcript and the tests check that the README still matches it.
+- The README has a demo transcript. It shows seven questions with the tool calls and the exact text the tools answer, copied from a run against the test Moodle site. `npm run demo` prints the transcript and the tests check that the README still matches it.
 - get_announcements no longer stops at the first course the school server will not open. When that happens each course is asked for on its own, and the courses and forums that could not be read are named at the end of the list. A sign in problem is still reported as an error.
 - The npm package now ships server.json and glama.json next to llms.txt, so the registry and Glama metadata travel with the tarball.
 - Dependencies updated. Vitest is on 5 now, and the Model Context Protocol SDK and zod are on their newest releases. The older Vitest release had security advisories that npm reported. Those are gone now.

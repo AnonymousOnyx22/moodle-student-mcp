@@ -53,6 +53,19 @@
       "example": { "name": "get_assignments", "arguments": { "course_id": 11 } }
     },
     {
+      "name": "get_missing_work",
+      "description": "Lists the assignments in your courses that you have not handed in yet, with the course name and the due date. Drafts that were never handed in are included, and work that was already handed in or graded is left out. Up to 25 assignments in each course are checked and the list holds up to 50 items.",
+      "parameters": [
+        {
+          "name": "course_ids",
+          "type": "array of string | number",
+          "required": false,
+          "description": "Course IDs from get_my_courses to limit the list. Leave out to cover all current courses."
+        }
+      ],
+      "example": { "name": "get_missing_work", "arguments": {} }
+    },
+    {
       "name": "get_my_grades",
       "description": "Shows the posted overall grade for every current course, or \"no grade posted yet\".",
       "parameters": [],

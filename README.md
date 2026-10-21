@@ -21,6 +21,7 @@ Restart the app, then ask:
 
 - "What's due this week?"
 - "Is anything overdue?"
+- "What work am I still missing?"
 - "What's my grade in Networking?"
 
 Ask your AI what's actually left to do in Moodle with the Moodle MCP server.
@@ -96,6 +97,19 @@ The server answers:
 
 The app replies: Networking Basics is course 11. Lab 3 routing table has not been submitted, and Lab 4 report draft is still a draft, so it is saved but not handed in. Lab 2 was submitted and Lab 1 is graded 8.00 out of 10.
 
+You: What work am I still missing?
+
+Tool call: get_missing_work
+{"name":"get_missing_work","arguments":{}}
+
+The server answers:
+- Problem set 1 (Data Structures) was due Mon, Oct 19, 11:59 p.m. UTC, not submitted
+- Lab 3: routing table (Networking Basics) is due Wed, Oct 28, 11:59 p.m. UTC, not submitted
+- Lab 4: report draft (Networking Basics) is due Mon, Nov 2, 11:59 p.m. UTC, draft, not submitted
+- Problem set 2 (Data Structures) is due Fri, Nov 6, 11:59 p.m. UTC, not submitted
+
+The app replies: Four assignments are still not handed in. Problem set 1 in Data Structures was due on Oct 19, Lab 3 routing table in Networking Basics is due on Oct 28, the Lab 4 report draft in Networking Basics is due on Nov 2 and is still only a draft, and Problem set 2 in Data Structures is due on Nov 6.
+
 You: How am I doing in Networking Basics?
 
 Tool call: get_my_courses
@@ -155,6 +169,7 @@ To check your setup first, run `npx moodle-student-mcp doctor` with the two envi
 - "What's due in the next two weeks?"
 - "Is anything overdue?"
 - "Anything overdue in Networking Basics?"
+- "What work am I still missing?"
 - "What's my grade in each course, and what's in the gradebook for Networking?"
 - "Any new announcements?"
 - "Which assignments have I not submitted yet?"
@@ -169,6 +184,7 @@ All tools are read only.
 | `get_upcoming_due_dates` | Items that still need action and are due in the next 60 days, soonest first. Plain course events such as 'Course starts' are left out. Takes an optional list of course IDs |
 | `get_overdue` | Past due items that still need action. Takes an optional list of course IDs |
 | `get_assignments` | Assignments for a course with due dates and submission status |
+| `get_missing_work` | Assignments you have not handed in yet, drafts included, with the course name and the due date. Takes an optional list of course IDs |
 | `get_my_grades` | Current grade for each course |
 | `get_course_grade_items` | Every graded item in a course with mark and percentage |
 | `get_course_content` | Sections and activities for a course |

@@ -9,6 +9,8 @@ const courseId = z.union([z.string(), z.number()]).describe("Moodle course ID. U
 const DAY = 86400;
 /** The most items a due date list shows. */
 const MAX_ITEMS = 50;
+/** The most assignments looked at in one course. */
+const MAX_COURSE_ASSIGNMENTS = 25;
 /** Events asked for when a course filter will drop some of them. */
 const FILTERED_EVENTS = 200;
 
@@ -33,6 +35,28 @@ function statusText(s: any): string {
   if (st === "draft") return "draft, not submitted";
   if (st === "new" || !st) return "not submitted";
   return String(st);
+}
+
+/** The submission state of one assignment, as the school server reports it. */
+function submissionState(status: any): string | undefined {
+  const state = status?.submission?.status ?? status?.lastattempt?.submission?.status;
+  return state === undefined || state === null || state === "" ? undefined : String(state);
+}
+
+/** True when the assignment was never handed in. */
+function isUnsubmitted(state: string): boolean {
+  return state === "new" || state === "draft";
+}
+
+/** How work that was never handed in is described. */
+function unsubmittedText(state: string): string {
+  return state === "draft" ? "draft, not submitted" : "not submitted";
+}
+
+/** How the due date of work that is still owed is described. */
+function dueText(duedate: number | undefined, now: number): string {
+  if (!duedate) return "has no due date";
+  return duedate < now ? `was due ${fmtUnix(duedate)}` : `is due ${fmtUnix(duedate)}`;
 }
 
 /** Why one course or forum was left out, in the words the school server used. */
@@ -133,6 +157,67 @@ export const tools: ToolDef<Api>[] = [
         }),
       );
       return bullets(lines, "No assignments found.");
+    },
+  },
+  {
+    name: "get_missing_work",
+    title: "Missing work",
+    description:
+      "Answers 'what do I still owe?' Lists the assignments in your courses that you have not handed in yet, with the course name and the due date. Drafts that were never handed in are included, and work that was already handed in or graded is left out. Up to 25 assignments in each course are checked and the list holds up to 50 items. Input: course_ids, an optional array of course IDs to limit the list; leave it out to cover all current courses. Ask: 'What work am I still missing?'",
+    inputSchema: { course_ids: z.array(courseId).optional() },
+    run: async ({ course_ids }, api) => {
+      const courses = await myCourses(api);
+      const names = new Map(courses.map((c) => [c.id, c.fullname]));
+      const asked: (string | number)[] = course_ids?.length ? course_ids : courses.map((c) => c.id);
+      const ids = [...new Set(asked.map((id) => Number(id)).filter((id) => Number.isFinite(id)))];
+      if (!ids.length) return "No current courses found.";
+
+      const now = Math.floor(Date.now() / 1000);
+      const owed: { name: string; course: string; duedate: number; state: string }[] = [];
+      const problems: string[] = [];
+      let unread = 0;
+
+      for (const id of ids) {
+        const label = names.get(id) ?? `course ${id}`;
+        let assignments: any[] = [];
+        try {
+          const r = await api.call<{ courses?: { assignments?: any[] }[] }>("mod_assign_get_assignments", { courseids: [id] });
+          assignments = r.courses?.[0]?.assignments ?? [];
+        } catch (err) {
+          if (isSiteWideError(err)) throw err;
+          problems.push(`Could not read ${label}: ${reasonText(err)}`);
+          continue;
+        }
+        const list = [...assignments]
+          .sort((a, b) => (a.duedate || 9e12) - (b.duedate || 9e12))
+          .slice(0, MAX_COURSE_ASSIGNMENTS);
+        for (const a of list) {
+          if (!a || a.requiresubmission === 0 || a.uservisible === 0) continue;
+          let state: string | undefined;
+          try {
+            state = submissionState(await api.call("mod_assign_get_submission_status", { assignid: a.id }));
+          } catch (err) {
+            if (isSiteWideError(err)) throw err;
+            unread++;
+            continue;
+          }
+          if (!state) {
+            unread++;
+            continue;
+          }
+          if (!isUnsubmitted(state)) continue;
+          owed.push({ name: a.name ?? `assignment ${a.id}`, course: label, duedate: a.duedate ?? 0, state });
+        }
+      }
+
+      const lines = owed
+        .sort((a, b) => (a.duedate || 9e12) - (b.duedate || 9e12))
+        .slice(0, MAX_ITEMS)
+        .map((o) => `${o.name} (${o.course}) ${dueText(o.duedate, now)}, ${unsubmittedText(o.state)}`);
+      const notes = [...problems];
+      if (unread) notes.push(`Could not read the submission status of ${unread} assignment${unread === 1 ? "" : "s"}.`);
+      const body = bullets(lines, "No missing work found.");
+      return notes.length ? `${body}\n${bullets(notes)}` : body;
     },
   },
   {

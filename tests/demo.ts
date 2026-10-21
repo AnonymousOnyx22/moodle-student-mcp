@@ -48,6 +48,32 @@ const EVENTS = [
   },
 ];
 
+/** The assignments in the sample courses, with the state of each submission. */
+const ASSIGNMENTS: Record<string, { id: number; name: string; duedate: number }[]> = {
+  "11": [
+    { id: 1, name: "Lab 1: LAN cabling", duedate: ts("2026-10-09T23:59:00Z") },
+    { id: 2, name: "Lab 2: subnetting worksheet", duedate: ts("2026-10-16T23:59:00Z") },
+    { id: 3, name: "Lab 3: routing table", duedate: ts("2026-10-28T23:59:00Z") },
+    { id: 4, name: "Lab 4: report draft", duedate: ts("2026-11-02T23:59:00Z") },
+  ],
+  "12": [
+    { id: 5, name: "Problem set 1", duedate: ts("2026-10-19T23:59:00Z") },
+    { id: 6, name: "Problem set 2", duedate: ts("2026-11-06T23:59:00Z") },
+    { id: 7, name: "Reading response", duedate: ts("2026-10-12T23:59:00Z") },
+  ],
+};
+
+/** The state of each sample submission. */
+const SUBMISSIONS: Record<string, string> = {
+  "1": "submitted",
+  "2": "submitted",
+  "3": "new",
+  "4": "draft",
+  "5": "new",
+  "6": "new",
+  "7": "submitted",
+};
+
 /** A Moodle site with made up but fixed course data. */
 function handler(req: http.IncomingMessage, res: http.ServerResponse): void {
   const url = new URL(req.url!, "http://x");
@@ -79,25 +105,20 @@ function handler(req: http.IncomingMessage, res: http.ServerResponse): void {
       );
       return send({ events });
     }
-    case "mod_assign_get_assignments":
+    case "mod_assign_get_assignments": {
+      const ids = Object.keys(q)
+        .filter((k) => k.startsWith("courseids["))
+        .map((k) => q[k]);
       return send({
-        courses: [
-          {
-            assignments: [
-              { id: 1, name: "Lab 1: LAN cabling", duedate: ts("2026-10-09T23:59:00Z") },
-              { id: 2, name: "Lab 2: subnetting worksheet", duedate: ts("2026-10-16T23:59:00Z") },
-              { id: 3, name: "Lab 3: routing table", duedate: ts("2026-10-28T23:59:00Z") },
-              { id: 4, name: "Lab 4: report draft", duedate: ts("2026-11-02T23:59:00Z") },
-            ],
-          },
-        ],
+        courses: [{ assignments: ids.flatMap((id) => ASSIGNMENTS[id] ?? []) }],
       });
-    case "mod_assign_get_submission_status":
-      if (q.assignid === "1")
-        return send({ lastattempt: { submission: { status: "submitted" } }, feedback: { gradefordisplay: "8.00 / 10.00" } });
-      if (q.assignid === "2") return send({ lastattempt: { submission: { status: "submitted" } } });
-      if (q.assignid === "3") return send({ lastattempt: { submission: { status: "new" } } });
-      return send({ lastattempt: { submission: { status: "draft" } } });
+    }
+    case "mod_assign_get_submission_status": {
+      const state = SUBMISSIONS[q.assignid ?? ""] ?? "submitted";
+      const body: Record<string, unknown> = { lastattempt: { submission: { status: state } } };
+      if (q.assignid === "1") body.feedback = { gradefordisplay: "8.00 / 10.00" };
+      return send(body);
+    }
     case "gradereport_overview_get_course_grades":
       return send({ grades: [{ courseid: 11, grade: "88.50" }, { courseid: 12, grade: "-" }] });
     case "gradereport_user_get_grade_items":
@@ -200,6 +221,12 @@ const TURNS: Turn[] = [
     ],
     reply:
       "Networking Basics is course 11. Lab 3 routing table has not been submitted, and Lab 4 report draft is still a draft, so it is saved but not handed in. Lab 2 was submitted and Lab 1 is graded 8.00 out of 10.",
+  },
+  {
+    question: "What work am I still missing?",
+    steps: [{ tool: "get_missing_work", args: () => ({}) }],
+    reply:
+      "Four assignments are still not handed in. Problem set 1 in Data Structures was due on Oct 19, Lab 3 routing table in Networking Basics is due on Oct 28, the Lab 4 report draft in Networking Basics is due on Nov 2 and is still only a draft, and Problem set 2 in Data Structures is due on Nov 6.",
   },
   {
     question: "How am I doing in Networking Basics?",
