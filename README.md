@@ -98,6 +98,23 @@ Tests run against a fake Moodle server, so they need no account or network.
 
 If this saved you time digging through Moodle, please [give the repo a star](https://github.com/AnonymousOnyx22/moodle-student-mcp). It sits at 0 stars, and one star helps the next student find it.
 
+## Moodle vs Brightspace
+
+Both are free, open source, read only MCP servers for students. Use the one that matches your school's learning platform. If your school uses both, or you move between schools, you can run both side by side under different server names in your MCP config.
+
+| | Moodle MCP | [Brightspace MCP](https://github.com/AnonymousOnyx22/brightspace-d2l-mcp) |
+| --- | --- | --- |
+| Learning platform | Moodle | D2L Brightspace |
+| Sign in | Moodle mobile web service key from your Security keys page | Browser sign in, works with Microsoft, Duo, Okta and Shibboleth |
+| School setup needed | Mobile web service must be turned on | None |
+| Courses, due dates, grades | Yes | Yes |
+| Submission status per assignment | Yes | Yes |
+| Course files | Yes | Yes |
+| Announcements | Yes | Yes |
+| Discussions, roster, calendar, grade outlook | No | Yes |
+| Target grade calculator | No | Yes |
+| Cost | Free | Free |
+
 ## More free student MCP servers
 
 All free, open source and read only where they touch your accounts. Browse the full list at [brightspacemcp.com/more-mcps](https://brightspacemcp.com/more-mcps/).
