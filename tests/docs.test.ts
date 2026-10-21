@@ -9,10 +9,13 @@ const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
   name: string;
   files?: string[];
+  homepage?: string;
 };
 const serverJson = JSON.parse(readFileSync(new URL("../server.json", import.meta.url), "utf8")) as {
   packages: { identifier: string }[];
+  websiteUrl?: string;
 };
+const repoUrl = "https://github.com/AnonymousOnyx22/moodle-student-mcp";
 const glama = JSON.parse(readFileSync(new URL("../glama.json", import.meta.url), "utf8")) as {
   tools?: { name: string; parameters?: { name: string; required?: boolean }[]; example?: { name: string; arguments: unknown } }[];
 };
@@ -62,6 +65,11 @@ describe("the published package carries the metadata files", () => {
 
   it("points server.json at the npm package it ships in", () => {
     expect(serverJson.packages[0].identifier).toBe(pkg.name);
+  });
+
+  it("points the package homepage and the server.json website at the source repository", () => {
+    expect(pkg.homepage).toBe(repoUrl);
+    expect(serverJson.websiteUrl).toBe(repoUrl);
   });
 });
 
