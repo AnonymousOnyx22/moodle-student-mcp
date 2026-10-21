@@ -64,7 +64,7 @@ All tools are read only.
 | `get_course_grade_items` | Every graded item in a course with mark and percentage |
 | `get_course_content` | Sections and activities for a course |
 | `get_file` | Download a course file and return its text |
-| `get_announcements` | Recent announcements |
+| `get_announcements` | Recent announcements, with any course Moodle will not open left out |
 
 ## Privacy and security
 

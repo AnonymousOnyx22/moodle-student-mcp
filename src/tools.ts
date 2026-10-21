@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { MoodleApi } from "./moodle.js";
 import { type ToolDef, bullets, fmtUnix, stripHtml } from "./core/tools.js";
-import { ApiError, describeStatus } from "./core/http.js";
+import { ApiError, describeStatus, isSiteWideError, statusSetupKey } from "./core/http.js";
 
 type Api = MoodleApi;
 
@@ -29,6 +29,12 @@ function statusText(s: any): string {
   if (st === "draft") return "draft, not submitted";
   if (st === "new" || !st) return "not submitted";
   return String(st);
+}
+
+/** Why one course or forum was left out, in the words the school server used. */
+function reasonText(err: unknown): string {
+  if (err instanceof ApiError) return err.detail ?? err.message;
+  return (err as Error).message;
 }
 
 export const tools: ToolDef<Api>[] = [
@@ -174,21 +180,76 @@ export const tools: ToolDef<Api>[] = [
     name: "get_announcements",
     title: "Announcements",
     description:
-      "Answers 'any new announcements?' Lists the latest news forum posts with subject and text, up to 5 posts from each of up to 10 news forums. Input: course_ids, an optional array of course IDs to limit the search; leave it out to cover all current courses. Ask: 'Any new announcements from my teachers?'",
+      "Answers 'any new announcements?' Lists the latest news forum posts with subject and text, up to 5 posts from each of up to 10 news forums. A course or forum the school server will not open is left out and the rest still shows. Input: course_ids, an optional array of course IDs to limit the search; leave it out to cover all current courses. Ask: 'Any new announcements from my teachers?'",
     inputSchema: { course_ids: z.array(courseId).optional() },
     run: async ({ course_ids }, api) => {
-      const ids: (string | number)[] = course_ids?.length ? course_ids : (await myCourses(api)).map((c) => c.id);
+      const courses = course_ids?.length ? [] : await myCourses(api);
+      const ids: (string | number)[] = course_ids?.length ? course_ids : courses.map((c) => c.id);
       if (!ids.length) return "No current courses found.";
-      const forums = await api.call<any[]>("mod_forum_get_forums_by_courses", { courseids: ids });
-      const news = (forums ?? []).filter((f) => f.type === "news").slice(0, 10);
+      const courseLabel = (id: string | number) => courses.find((c) => c.id === Number(id))?.fullname ?? `course ${id}`;
+
+      const forums: any[] = [];
+      const seen = new Set<number>();
+      const leftOut: string[] = [];
+      let firstError: unknown;
+
+      const addForums = (list: any[]) => {
+        for (const f of list ?? []) {
+          if (!f) continue;
+          if (f.id !== undefined) {
+            if (seen.has(f.id)) continue;
+            seen.add(f.id);
+          }
+          forums.push(f);
+        }
+      };
+
+      let coursesRead = 0;
+      try {
+        addForums(await api.call<any[]>("mod_forum_get_forums_by_courses", { courseids: ids }));
+        coursesRead = ids.length;
+      } catch (err) {
+        if (isSiteWideError(err)) throw err;
+        // One course can break the call for all of them, so ask for each course on its own.
+        for (const id of ids) {
+          try {
+            addForums(await api.call<any[]>("mod_forum_get_forums_by_courses", { courseids: [id] }));
+            coursesRead++;
+          } catch (courseErr) {
+            if (isSiteWideError(courseErr)) throw courseErr;
+            firstError ??= courseErr;
+            leftOut.push(`Could not read ${courseLabel(id)}: ${reasonText(courseErr)}`);
+          }
+        }
+      }
+
+      const news = forums.filter((f) => f.type === "news").slice(0, 10);
       const lines: string[] = [];
+      let forumsRead = 0;
       for (const f of news) {
-        const r = await api.call<{ discussions?: any[] }>("mod_forum_get_forum_discussions", { forumid: f.id, perpage: 5 });
-        for (const d of r.discussions ?? []) {
+        let discussions: any[] = [];
+        try {
+          const r = await api.call<{ discussions?: any[] }>("mod_forum_get_forum_discussions", { forumid: f.id, perpage: 5 });
+          discussions = r.discussions ?? [];
+        } catch (err) {
+          if (isSiteWideError(err)) throw err;
+          firstError ??= err;
+          leftOut.push(`Could not read the ${f.name ?? `forum ${f.id}`} forum: ${reasonText(err)}`);
+          continue;
+        }
+        forumsRead++;
+        for (const d of discussions) {
           lines.push(`${d.subject ?? d.name} (${fmtUnix(d.timemodified)})\n  ${stripHtml(d.message, 400).replace(/\n/g, " ")}`);
         }
       }
-      return bullets(lines, "No recent announcements.");
+
+      // Nothing at all came back, so the first problem is the answer.
+      if (!lines.length && firstError && (coursesRead === 0 || (news.length > 0 && forumsRead === 0))) {
+        throw firstError;
+      }
+
+      const body = bullets(lines, "No recent announcements.");
+      return leftOut.length ? `${body}\n${bullets(leftOut)}` : body;
     },
   },
   {
@@ -203,7 +264,7 @@ export const tools: ToolDef<Api>[] = [
       const u = new URL(url);
       if (!u.searchParams.has("token") && api.token) u.searchParams.set("token", api.token);
       const res = await fetch(u.toString());
-      if (!res.ok) throw new ApiError(describeStatus(res.status), res.status);
+      if (!res.ok) throw new ApiError(describeStatus(res.status), res.status, undefined, statusSetupKey(res.status));
       const buf = await res.arrayBuffer();
       const text = new TextDecoder("utf-8", { fatal: false }).decode(buf).trim();
       if (!text) return "This file is empty.";

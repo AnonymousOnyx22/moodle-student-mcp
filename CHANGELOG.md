@@ -18,6 +18,7 @@
 
 ## Unreleased
 
+- get_announcements no longer stops at the first course the school server will not open. When that happens each course is asked for on its own, and the courses and forums that could not be read are named at the end of the list. A sign in problem is still reported as an error.
 - The npm package now ships server.json and glama.json next to llms.txt, so the registry and Glama metadata travel with the tarball.
 - Dependencies updated. Vitest is on 5 now, and the Model Context Protocol SDK and zod are on their newest releases. The older Vitest release had security advisories that npm reported. Those are gone now.
 - Setup errors now carry the fix with them. The server raises the same messages as the README troubleshooting table for a wrong key, missing web services, access problems, an unknown course ID and a reply it can't read. The key messages name the Security keys page.

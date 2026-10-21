@@ -53,7 +53,7 @@ Parameters: file_url (required, URL of the course file to download, string).
 Example call: `{"name":"get_file","arguments":{"file_url":"https://moodle.example.edu/webservice/pluginfile.php/1/mod_resource/content/0/slides.pdf"}}`
 
 ### get_announcements
-Lists the latest news forum posts with subject and text, up to 5 posts from each of up to 10 news forums.
+Lists the latest news forum posts with subject and text, up to 5 posts from each of up to 10 news forums. A course or forum the school server will not open is left out and the rest still shows.
 Parameters: course_ids (optional, array of course IDs from get_my_courses to limit the search, string or number items; leave it out to cover all current courses).
 Example call: `{"name":"get_announcements","arguments":{"course_ids":[11]}}`
 

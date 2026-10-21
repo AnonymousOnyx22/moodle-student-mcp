@@ -1,4 +1,4 @@
-import { ApiError, createClient, describeMoodleError, type HttpClient } from "./core/http.js";
+import { ApiError, createClient, moodleErrorKey, setupMessage, type HttpClient } from "./core/http.js";
 
 export interface MoodleApi {
   call<T = any>(fn: string, params?: Record<string, unknown>): Promise<T>;
@@ -34,8 +34,10 @@ export function createMoodleApi(baseUrl: string, token: string, fetchImpl?: type
       const data = await http.get<any>("webservice/rest/server.php", { wsfunction: fn, ...flatten(params) });
       if (data && typeof data === "object" && !Array.isArray(data) && data.exception) {
         const code = String(data.errorcode ?? "");
-        const text = describeMoodleError(code) ?? `Moodle said: ${data.message ?? code}`;
-        throw new ApiError(text, 200, JSON.stringify(data).slice(0, 300));
+        const detail = String(data.message ?? code);
+        const key = moodleErrorKey(code);
+        const text = key ? setupMessage(key) : `Moodle said: ${detail}`;
+        throw new ApiError(text, 200, JSON.stringify(data).slice(0, 300), key, detail);
       }
       return data as T;
     },

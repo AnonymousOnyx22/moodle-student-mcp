@@ -3,6 +3,10 @@ export class ApiError extends Error {
     message: string,
     public status: number,
     public body?: string,
+    /** The setup problem the message names, when it names one. */
+    public setup?: SetupProblemKey,
+    /** The words the school's server sent, when it sent any. */
+    public detail?: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -64,10 +68,20 @@ const MOODLE_ERROR_CODES: Record<string, SetupProblemKey> = {
   invalidrecord: "notFound",
 };
 
-/** The message for a Moodle error code, or undefined when the code is not one we know. */
-export function describeMoodleError(code: string): string | undefined {
-  const key = MOODLE_ERROR_CODES[code];
-  return key ? setupMessage(key) : undefined;
+/** The setup problem behind a Moodle error code, or undefined when the code is not one we know. */
+export function moodleErrorKey(code: string): SetupProblemKey | undefined {
+  return MOODLE_ERROR_CODES[code];
+}
+
+/**
+ * The setup problems that stop every call, whatever it asks for.
+ * A caller that can carry on without one of these should keep going.
+ */
+const SITE_WIDE_PROBLEMS: SetupProblemKey[] = ["notSignedIn", "webServicesNotEnabled", "unreadableReply"];
+
+/** True when the error will happen on every call, so the caller should stop and report it. */
+export function isSiteWideError(err: unknown): boolean {
+  return err instanceof ApiError && err.setup !== undefined && SITE_WIDE_PROBLEMS.includes(err.setup);
 }
 
 export interface ClientOptions {
@@ -111,15 +125,15 @@ function nextLink(header: string | null): string | null {
 }
 
 /** Moodle sometimes answers with an HTML error page instead of JSON. */
-function describeBody(text: string): string {
+function bodySetupKey(text: string): SetupProblemKey {
   const lower = text.toLowerCase();
   if (lower.includes("web services are not enabled") || lower.includes("webservicesnotenabled")) {
-    return setupMessage("webServicesNotEnabled");
+    return "webServicesNotEnabled";
   }
   if (lower.includes("invalid token") || lower.includes("invalidtoken")) {
-    return setupMessage("notSignedIn");
+    return "notSignedIn";
   }
-  return setupMessage("unreadableReply");
+  return "unreadableReply";
 }
 
 async function readJson<T>(res: Response): Promise<T> {
@@ -130,7 +144,8 @@ async function readJson<T>(res: Response): Promise<T> {
   try {
     return JSON.parse(text) as T;
   } catch {
-    throw new ApiError(describeBody(text), res.status, text.slice(0, 500));
+    const key = bodySetupKey(text);
+    throw new ApiError(setupMessage(key), res.status, text.slice(0, 500), key);
   }
 }
 
@@ -148,7 +163,7 @@ export function createClient(opts: ClientOptions): HttpClient {
       });
       if (!res.ok) {
         const body = await res.text().catch(() => "");
-        throw new ApiError(describeStatus(res.status), res.status, body.slice(0, 500));
+        throw new ApiError(describeStatus(res.status), res.status, body.slice(0, 500), statusSetupKey(res.status));
       }
       return res;
     } catch (err) {
@@ -182,14 +197,24 @@ export function createClient(opts: ClientOptions): HttpClient {
   };
 }
 
-export function describeStatus(status: number): string {
+/** The setup problem behind an HTTP status, when there is one. */
+export function statusSetupKey(status: number): SetupProblemKey | undefined {
   switch (status) {
     case 401:
-      return setupMessage("notSignedIn");
+      return "notSignedIn";
     case 403:
-      return setupMessage("accessDenied");
+      return "accessDenied";
     case 404:
-      return setupMessage("notFound");
+      return "notFound";
+    default:
+      return undefined;
+  }
+}
+
+export function describeStatus(status: number): string {
+  const key = statusSetupKey(status);
+  if (key) return setupMessage(key);
+  switch (status) {
     case 429:
       return "Rate limited by the school's server. Wait a minute and try again.";
     default:

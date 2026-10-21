@@ -12,6 +12,8 @@ const now = Math.floor(Date.now() / 1000);
 let srv: http.Server;
 let base = "";
 const seenParams: Record<string, string>[] = [];
+/** The forum whose discussions call fails, 0 for none. */
+let failForum = 0;
 
 beforeAll(async () => {
   srv = http.createServer((req, res) => {
@@ -54,7 +56,7 @@ beforeAll(async () => {
     if (q.wstoken === "badrecord") {
       return send({ exception: "moodle_exception", errorcode: "invalidrecord", message: "Invalid record ID (record not found)" });
     }
-    if (q.wstoken !== "good") {
+    if (q.wstoken !== "good" && q.wstoken !== "forumtoken") {
       return send({ exception: "moodle_exception", errorcode: "invalidtoken", message: "Invalid token - token not found" });
     }
     switch (q.wsfunction) {
@@ -98,10 +100,33 @@ beforeAll(async () => {
         ] }] });
       case "core_course_get_contents":
         return send([{ name: "Week 1", modules: [{ name: "Intro slides", modname: "resource" }] }]);
-      case "mod_forum_get_forums_by_courses":
-        return send([{ id: 5, type: "news", name: "Announcements" }, { id: 6, type: "general", name: "Chat" }]);
-      case "mod_forum_get_forum_discussions":
+      case "mod_forum_get_forums_by_courses": {
+        if (q.wstoken === "forumtoken") {
+          return send({ exception: "moodle_exception", errorcode: "invalidtoken", message: "Invalid token - token not found" });
+        }
+        const ids = Object.keys(q).filter((k) => k.startsWith("courseids[")).map((k) => q[k]);
+        if (ids.includes("12")) {
+          return send({ exception: "moodle_exception", errorcode: "invalidrecord", message: "Invalid record ID (record not found)" });
+        }
+        if (ids.includes("13")) {
+          return send({ exception: "webservice_access_exception", errorcode: "accessexception", message: "Access control exception" });
+        }
+        const forums: Record<string, unknown>[] = [];
+        for (const id of ids) {
+          if (id === "11") forums.push({ id: 5, type: "news", name: "Announcements" }, { id: 6, type: "general", name: "Chat" });
+          if (id === "14") forums.push({ id: 7, type: "news", name: "Course news" });
+        }
+        return send(forums);
+      }
+      case "mod_forum_get_forum_discussions": {
+        if (String(failForum) === q.forumid) {
+          return send({ exception: "moodle_exception", errorcode: "invalidrecord", message: "Invalid record ID (record not found)" });
+        }
+        if (q.forumid === "7") {
+          return send({ discussions: [{ subject: "Lab due Friday", name: "Lab due Friday", timemodified: now - 2000, message: "<p>Bring your <b>laptop</b></p>" }] });
+        }
         return send({ discussions: [{ subject: "Welcome", name: "Welcome", timemodified: now - 1000, message: "<p>Hello <b>class</b></p>" }] });
+      }
       case "core_enrol_get_users_courses_fail":
         return send({});
     }
@@ -193,6 +218,47 @@ describe("moodle-student-mcp", () => {
     const ann = (await call(c, "get_announcements")).text;
     expect(ann).toContain("Welcome");
     expect(ann).toContain("Hello class");
+  });
+
+  it("keeps the announcements when one course will not open", async () => {
+    const { text, isError } = await call(await connect(), "get_announcements", { course_ids: [11, 12] });
+    expect(isError).toBe(false);
+    expect(text).toContain("Welcome");
+    expect(text).toContain("Could not read course 12");
+    expect(text).toContain("Invalid record ID (record not found)");
+  });
+
+  it("keeps the announcements when one course denies access", async () => {
+    const { text, isError } = await call(await connect(), "get_announcements", { course_ids: [11, 13] });
+    expect(isError).toBe(false);
+    expect(text).toContain("Welcome");
+    expect(text).toContain("Could not read course 13");
+    expect(text).toContain("Access control exception");
+  });
+
+  it("keeps the announcements when one news forum will not open", async () => {
+    failForum = 5;
+    try {
+      const { text, isError } = await call(await connect(), "get_announcements", { course_ids: [11, 14] });
+      expect(isError).toBe(false);
+      expect(text).toContain("Lab due Friday");
+      expect(text).toContain("Could not read the Announcements forum");
+      expect(text).not.toContain("Welcome");
+    } finally {
+      failForum = 0;
+    }
+  });
+
+  it("reports the problem when no announcement can be read at all", async () => {
+    const { text, isError } = await call(await connect(), "get_announcements", { course_ids: [12] });
+    expect(isError).toBe(true);
+    expect(text).toBe(setupMessage("notFound"));
+  });
+
+  it("still reports a sign in problem instead of an empty list", async () => {
+    const { text, isError } = await call(await connect("forumtoken"), "get_announcements");
+    expect(isError).toBe(true);
+    expect(text).toBe(setupMessage("notSignedIn"));
   });
 
   it("turns Moodle's 200 error responses into friendly messages", async () => {
