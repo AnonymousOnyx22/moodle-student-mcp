@@ -16,19 +16,21 @@ function ts(iso: string): number {
 }
 
 const EVENTS = [
-  { name: "Quiz 1 closes", timesort: ts("2026-10-23T23:59:00Z"), course: { fullname: "Networking Basics" } },
-  { name: "Lab 4 report", timesort: ts("2026-10-28T23:59:00Z"), course: { fullname: "Networking Basics" } },
-  { name: "Problem set 3", timesort: ts("2026-11-02T23:59:00Z"), course: { fullname: "Data Structures" } },
+  { name: "Quiz 1 closes", timesort: ts("2026-10-23T23:59:00Z"), courseid: 11, course: { id: 11, fullname: "Networking Basics" } },
+  { name: "Lab 4 report", timesort: ts("2026-10-28T23:59:00Z"), courseid: 11, course: { id: 11, fullname: "Networking Basics" } },
+  { name: "Problem set 3", timesort: ts("2026-11-02T23:59:00Z"), courseid: 12, course: { id: 12, fullname: "Data Structures" } },
   {
     name: "Lab 2 report",
     timesort: ts("2026-10-16T23:59:00Z"),
-    course: { fullname: "Networking Basics" },
+    courseid: 11,
+    course: { id: 11, fullname: "Networking Basics" },
     action: { actionable: true },
   },
   {
     name: "Reading quiz",
     timesort: ts("2026-10-19T17:00:00Z"),
-    course: { fullname: "Data Structures" },
+    courseid: 12,
+    course: { id: 12, fullname: "Data Structures" },
     action: { actionable: false },
   },
 ];
@@ -163,6 +165,14 @@ const TURNS: Turn[] = [
     steps: [{ tool: "get_upcoming_due_dates", args: () => ({}) }],
     reply:
       "Three things are due soon. Quiz 1 closes on Friday, the Lab 4 report is due on Wednesday, and Problem set 3 in Data Structures is due on Monday.",
+  },
+  {
+    question: "What's due in Networking Basics?",
+    steps: [
+      { tool: "get_my_courses", args: () => ({}) },
+      { tool: "get_upcoming_due_dates", args: (earlier) => ({ course_ids: [courseIdFrom(earlier[0])] }) },
+    ],
+    reply: "Networking Basics has two things due soon: Quiz 1 closes on Friday and the Lab 4 report is due on Wednesday.",
   },
   {
     question: "Is anything overdue?",

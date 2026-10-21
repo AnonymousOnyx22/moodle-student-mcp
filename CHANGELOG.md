@@ -18,7 +18,8 @@
 
 ## Unreleased
 
-- The README has a demo transcript. It shows five questions with the tool calls and the exact text the tools answer, copied from a run against the test Moodle site. `npm run demo` prints the transcript and the tests check that the README still matches it.
+- get_upcoming_due_dates and get_overdue take an optional course_ids list, the same filter get_announcements already had. A question about one course no longer brings back every course.
+- The README has a demo transcript. It shows six questions with the tool calls and the exact text the tools answer, copied from a run against the test Moodle site. `npm run demo` prints the transcript and the tests check that the README still matches it.
 - get_announcements no longer stops at the first course the school server will not open. When that happens each course is asked for on its own, and the courses and forums that could not be read are named at the end of the list. A sign in problem is still reported as an error.
 - The npm package now ships server.json and glama.json next to llms.txt, so the registry and Glama metadata travel with the tarball.
 - Dependencies updated. Vitest is on 5 now, and the Model Context Protocol SDK and zod are on their newest releases. The older Vitest release had security advisories that npm reported. Those are gone now.

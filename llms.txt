@@ -18,14 +18,14 @@ Parameters: none.
 Example call: `{"name":"get_my_courses","arguments":{}}`
 
 ### get_upcoming_due_dates
-Lists up to 50 items due in the next 60 days across all current courses, soonest first, with the course name and due date.
-Parameters: none.
-Example call: `{"name":"get_upcoming_due_dates","arguments":{}}`
+Lists up to 50 items due in the next 60 days across your courses, soonest first, with the course name and due date.
+Parameters: course_ids (optional, array of course IDs from get_my_courses to limit the list, string or number items; leave it out to cover all current courses).
+Example call: `{"name":"get_upcoming_due_dates","arguments":{"course_ids":[11]}}`
 
 ### get_overdue
 Lists past due items from the last 45 days that still need action, with the course name and the date each was due.
-Parameters: none.
-Example call: `{"name":"get_overdue","arguments":{}}`
+Parameters: course_ids (optional, array of course IDs from get_my_courses to limit the list, string or number items; leave it out to cover all current courses).
+Example call: `{"name":"get_overdue","arguments":{"course_ids":[11]}}`
 
 ### get_assignments
 Lists up to 25 assignments for one course with due dates and submission status: not submitted, draft, submitted or graded.

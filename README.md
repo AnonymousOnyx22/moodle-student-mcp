@@ -48,6 +48,24 @@ The server answers:
 
 The app replies: Three things are due soon. Quiz 1 closes on Friday, the Lab 4 report is due on Wednesday, and Problem set 3 in Data Structures is due on Monday.
 
+You: What's due in Networking Basics?
+
+Tool call: get_my_courses
+{"name":"get_my_courses","arguments":{}}
+
+The server answers:
+- Networking Basics [id 11]
+- Data Structures [id 12]
+
+Tool call: get_upcoming_due_dates
+{"name":"get_upcoming_due_dates","arguments":{"course_ids":[11]}}
+
+The server answers:
+- Quiz 1 closes (Networking Basics) due Fri, Oct 23, 11:59 p.m. UTC
+- Lab 4 report (Networking Basics) due Wed, Oct 28, 11:59 p.m. UTC
+
+The app replies: Networking Basics has two things due soon: Quiz 1 closes on Friday and the Lab 4 report is due on Wednesday.
+
 You: Is anything overdue?
 
 Tool call: get_overdue
@@ -133,8 +151,10 @@ To check your setup first, run `npx moodle-student-mcp doctor` with the two envi
 ## What you can ask
 
 - "What's due this week?"
+- "What's due in Networking Basics?"
 - "What's due in the next two weeks?"
 - "Is anything overdue?"
+- "Anything overdue in Networking Basics?"
 - "What's my grade in each course, and what's in the gradebook for Networking?"
 - "Any new announcements?"
 - "Which assignments have I not submitted yet?"
@@ -146,8 +166,8 @@ All tools are read only.
 | Tool | What it does |
 | --- | --- |
 | `get_my_courses` | Your current courses and their IDs |
-| `get_upcoming_due_dates` | Everything due in the next 60 days, soonest first |
-| `get_overdue` | Past due items that still need action |
+| `get_upcoming_due_dates` | Everything due in the next 60 days, soonest first. Takes an optional list of course IDs |
+| `get_overdue` | Past due items that still need action. Takes an optional list of course IDs |
 | `get_assignments` | Assignments for a course with due dates and submission status |
 | `get_my_grades` | Current grade for each course |
 | `get_course_grade_items` | Every graded item in a course with mark and percentage |

@@ -67,18 +67,21 @@ beforeAll(async () => {
           { id: 11, fullname: "Networking Basics" },
           { id: 12, fullname: "Old Course", enddate: now - 100000 },
           { id: 13, fullname: "Hidden Course", hidden: true },
+          { id: 14, fullname: "Data Structures" },
         ]);
       case "core_calendar_get_action_events_by_timeframe": {
         const from = Number(q.timesortfrom);
         if (from < now - 86400) {
           return send({ events: [
-            { name: "Lab 2 is due", timesort: now - 86400, course: { fullname: "Networking Basics" }, action: { actionable: true } },
-            { name: "Quiz closed", timesort: now - 90000, course: { fullname: "Networking Basics" }, action: { actionable: false } },
+            { name: "Lab 2 is due", timesort: now - 86400, courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: true } },
+            { name: "Quiz closed", timesort: now - 90000, courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: false } },
+            { name: "Essay draft", timesort: now - 200000, courseid: 14, course: { id: 14, fullname: "Data Structures" }, action: { actionable: true } },
           ] });
         }
         return send({ events: [
-          { name: "Lab 4 is due", timesort: now + 200000, course: { fullname: "Networking Basics" } },
-          { name: "Quiz 1 closes", timesort: now + 100000, course: { fullname: "Networking Basics" } },
+          { name: "Lab 4 is due", timesort: now + 200000, courseid: 11, course: { id: 11, fullname: "Networking Basics" } },
+          { name: "Quiz 1 closes", timesort: now + 100000, courseid: 11, course: { id: 11, fullname: "Networking Basics" } },
+          { name: "Problem set 3", timesort: now + 300000, courseid: 14, course: { id: 14, fullname: "Data Structures" } },
         ] });
       }
       case "mod_assign_get_assignments":
@@ -187,6 +190,50 @@ describe("moodle-student-mcp", () => {
     const od = (await call(c, "get_overdue")).text;
     expect(od).toContain("Lab 2 is due");
     expect(od).not.toContain("Quiz closed");
+  });
+
+  it("keeps every course when no filter is given", async () => {
+    const c = await connect();
+    const up = (await call(c, "get_upcoming_due_dates")).text;
+    expect(up).toContain("Quiz 1 closes");
+    expect(up).toContain("Problem set 3");
+    const od = (await call(c, "get_overdue")).text;
+    expect(od).toContain("Lab 2 is due");
+    expect(od).toContain("Essay draft");
+  });
+
+  it("limits due dates and overdue work to the courses asked for", async () => {
+    const c = await connect();
+    const up = (await call(c, "get_upcoming_due_dates", { course_ids: [14] })).text;
+    expect(up).toContain("Problem set 3");
+    expect(up).not.toContain("Quiz 1 closes");
+    const od = (await call(c, "get_overdue", { course_ids: [14] })).text;
+    expect(od).toContain("Essay draft");
+    expect(od).not.toContain("Lab 2 is due");
+  });
+
+  it("shows an empty list when the courses asked for have nothing due", async () => {
+    const c = await connect();
+    expect((await call(c, "get_upcoming_due_dates", { course_ids: [99] })).text).toBe("No upcoming due dates.");
+    expect((await call(c, "get_overdue", { course_ids: [99] })).text).toBe("Nothing overdue.");
+  });
+
+  it("takes course IDs as text as well as numbers", async () => {
+    const c = await connect();
+    const up = (await call(c, "get_upcoming_due_dates", { course_ids: ["11"] })).text;
+    expect(up).toContain("Quiz 1 closes");
+    expect(up).not.toContain("Problem set 3");
+  });
+
+  it("asks for more events when a filter will drop some of them", async () => {
+    const limitAsked = async (args: Record<string, unknown>) => {
+      seenParams.length = 0;
+      await call(await connect(), "get_upcoming_due_dates", args);
+      const ask = seenParams.find((p) => p.wsfunction === "core_calendar_get_action_events_by_timeframe");
+      return Number(ask?.limitnum);
+    };
+    expect(await limitAsked({})).toBe(50);
+    expect(await limitAsked({ course_ids: [14] })).toBeGreaterThan(50);
   });
 
   it("shows assignments with submission status", async () => {

@@ -7,6 +7,10 @@ type Api = MoodleApi;
 
 const courseId = z.union([z.string(), z.number()]).describe("Moodle course ID. Use get_my_courses to find it.");
 const DAY = 86400;
+/** The most items a due date list shows. */
+const MAX_ITEMS = 50;
+/** Events asked for when a course filter will drop some of them. */
+const FILTERED_EVENTS = 200;
 
 interface Course {
   id: number;
@@ -37,6 +41,30 @@ function reasonText(err: unknown): string {
   return (err as Error).message;
 }
 
+/** The course a calendar event belongs to, or 0 when it has none. */
+function eventCourseId(event: any): number {
+  const id = event?.courseid ?? event?.course?.id;
+  return Number(id) || 0;
+}
+
+/**
+ * The calendar events in a window. The school server sends the events of every
+ * course, so the courses the student asked for are kept here. Without a filter
+ * every event comes back.
+ */
+async function calendarEvents(api: Api, from: number, to: number, courseIds?: (string | number)[]): Promise<any[]> {
+  const asked = courseIds ?? [];
+  const wanted = asked.map((id) => Number(id)).filter((id) => Number.isFinite(id));
+  const r = await api.call<{ events?: any[] }>("core_calendar_get_action_events_by_timeframe", {
+    timesortfrom: from,
+    timesortto: to,
+    // Events of other courses will be dropped, so ask for more of them.
+    limitnum: asked.length ? FILTERED_EVENTS : MAX_ITEMS,
+  });
+  const events = r.events ?? [];
+  return asked.length ? events.filter((e) => wanted.includes(eventCourseId(e))) : events;
+}
+
 export const tools: ToolDef<Api>[] = [
   {
     name: "get_my_courses",
@@ -53,16 +81,13 @@ export const tools: ToolDef<Api>[] = [
     name: "get_upcoming_due_dates",
     title: "Upcoming due dates",
     description:
-      "Answers 'what is due soon?' Lists up to 50 items due in the next 60 days across all current courses, soonest first, with the course name and due date. No input. Ask: 'What's due in the next two weeks?'",
-    inputSchema: {},
-    run: async (_args, api) => {
+      "Answers 'what is due soon?' Lists up to 50 items due in the next 60 days across your courses, soonest first, with the course name and due date. Input: course_ids, an optional array of course IDs to limit the list; leave it out to cover all current courses. Ask: 'What's due in the next two weeks?'",
+    inputSchema: { course_ids: z.array(courseId).optional() },
+    run: async ({ course_ids }, api) => {
       const now = Math.floor(Date.now() / 1000);
-      const r = await api.call<{ events?: any[] }>("core_calendar_get_action_events_by_timeframe", {
-        timesortfrom: now,
-        timesortto: now + 60 * DAY,
-        limitnum: 50,
-      });
-      const events = (r.events ?? []).sort((a, b) => a.timesort - b.timesort);
+      const events = (await calendarEvents(api, now, now + 60 * DAY, course_ids))
+        .sort((a, b) => a.timesort - b.timesort)
+        .slice(0, MAX_ITEMS);
       return bullets(
         events.map((e) => `${e.name} (${e.course?.fullname ?? "course"}) due ${fmtUnix(e.timesort)}`),
         "No upcoming due dates.",
@@ -73,16 +98,13 @@ export const tools: ToolDef<Api>[] = [
     name: "get_overdue",
     title: "Overdue work",
     description:
-      "Answers 'is anything overdue?' Lists past due items from the last 45 days that still need action, with the course name and the date each was due. No input. Ask: 'Is anything overdue?'",
-    inputSchema: {},
-    run: async (_args, api) => {
+      "Answers 'is anything overdue?' Lists past due items from the last 45 days that still need action, with the course name and the date each was due. Input: course_ids, an optional array of course IDs to limit the list; leave it out to cover all current courses. Ask: 'Is anything overdue?'",
+    inputSchema: { course_ids: z.array(courseId).optional() },
+    run: async ({ course_ids }, api) => {
       const now = Math.floor(Date.now() / 1000);
-      const r = await api.call<{ events?: any[] }>("core_calendar_get_action_events_by_timeframe", {
-        timesortfrom: now - 45 * DAY,
-        timesortto: now,
-        limitnum: 50,
-      });
-      const events = (r.events ?? []).filter((e) => e.action?.actionable);
+      const events = (await calendarEvents(api, now - 45 * DAY, now, course_ids))
+        .filter((e) => e.action?.actionable)
+        .slice(0, MAX_ITEMS);
       return bullets(
         events.map((e) => `${e.name} (${e.course?.fullname ?? "course"}) was due ${fmtUnix(e.timesort)}`),
         "Nothing overdue.",

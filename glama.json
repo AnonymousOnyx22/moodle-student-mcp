@@ -15,15 +15,29 @@
     },
     {
       "name": "get_upcoming_due_dates",
-      "description": "Lists up to 50 items due in the next 60 days across all current courses, soonest first, with the course name and due date.",
-      "parameters": [],
-      "example": { "name": "get_upcoming_due_dates", "arguments": {} }
+      "description": "Lists up to 50 items due in the next 60 days across your courses, soonest first, with the course name and due date.",
+      "parameters": [
+        {
+          "name": "course_ids",
+          "type": "array of string | number",
+          "required": false,
+          "description": "Course IDs from get_my_courses to limit the list. Leave out to cover all current courses."
+        }
+      ],
+      "example": { "name": "get_upcoming_due_dates", "arguments": { "course_ids": [11] } }
     },
     {
       "name": "get_overdue",
       "description": "Lists past due items from the last 45 days that still need action, with the course name and the date each was due.",
-      "parameters": [],
-      "example": { "name": "get_overdue", "arguments": {} }
+      "parameters": [
+        {
+          "name": "course_ids",
+          "type": "array of string | number",
+          "required": false,
+          "description": "Course IDs from get_my_courses to limit the list. Leave out to cover all current courses."
+        }
+      ],
+      "example": { "name": "get_overdue", "arguments": { "course_ids": [11] } }
     },
     {
       "name": "get_assignments",
