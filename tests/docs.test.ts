@@ -12,9 +12,16 @@ const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url),
   homepage?: string;
 };
 const serverJson = JSON.parse(readFileSync(new URL("../server.json", import.meta.url), "utf8")) as {
-  packages: { identifier: string }[];
+  title?: string;
+  packages: {
+    identifier: string;
+    runtimeHint?: string;
+    runtimeArguments?: { type: string; value?: string }[];
+    environmentVariables?: { name: string; description?: string; isRequired?: boolean; isSecret?: boolean }[];
+  }[];
   websiteUrl?: string;
 };
+const indexSource = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
 const repoUrl = "https://github.com/AnonymousOnyx22/moodle-student-mcp";
 const glama = JSON.parse(readFileSync(new URL("../glama.json", import.meta.url), "utf8")) as {
   tools?: { name: string; parameters?: { name: string; required?: boolean }[]; example?: { name: string; arguments: unknown } }[];
@@ -70,6 +77,42 @@ describe("the published package carries the metadata files", () => {
   it("points the package homepage and the server.json website at the source repository", () => {
     expect(pkg.homepage).toBe(repoUrl);
     expect(serverJson.websiteUrl).toBe(repoUrl);
+  });
+});
+
+describe("server.json tells a registry client how to install the server", () => {
+  const npmPackage = serverJson.packages[0];
+
+  it("gives the server a display name that fits the registry limit", () => {
+    expect(serverJson.title).toBeTruthy();
+    expect(serverJson.title!.length).toBeLessThanOrEqual(100);
+  });
+
+  it("launches the package with npx", () => {
+    expect(npmPackage.runtimeHint).toBe("npx");
+    expect(npmPackage.runtimeArguments).toContainEqual({ type: "positional", value: "-y" });
+  });
+
+  it("asks for every environment variable the server needs", () => {
+    const names = (npmPackage.environmentVariables ?? []).map((v) => v.name);
+    const needed = [...indexSource.matchAll(/requireEnv\("([A-Z0-9_]+)"/g)].map((m) => m[1]);
+    expect(needed.length).toBeGreaterThan(0);
+    expect(names.sort()).toEqual([...new Set(needed)].sort());
+  });
+
+  it("marks both variables as required and the token as secret", () => {
+    const variables = npmPackage.environmentVariables ?? [];
+    const baseUrl = variables.find((v) => v.name === "MOODLE_BASE_URL");
+    const token = variables.find((v) => v.name === "MOODLE_TOKEN");
+    expect(baseUrl?.isRequired).toBe(true);
+    expect(baseUrl?.isSecret ?? false).toBe(false);
+    expect(token?.isRequired).toBe(true);
+    expect(token?.isSecret).toBe(true);
+  });
+
+  it("describes where the token comes from", () => {
+    const token = (npmPackage.environmentVariables ?? []).find((v) => v.name === "MOODLE_TOKEN");
+    expect(token?.description).toContain(SECURITY_KEYS_PATH);
   });
 });
 

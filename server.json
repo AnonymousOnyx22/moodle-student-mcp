@@ -1,6 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.AnonymousOnyx22/moodle-student-mcp",
+  "title": "Moodle Student MCP",
   "description": "Moodle MCP server for students. Read only access to courses, grades, due dates and announcements.",
   "repository": {
     "url": "https://github.com/AnonymousOnyx22/moodle-student-mcp",
@@ -10,11 +11,32 @@
   "packages": [
     {
       "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "moodle-student-mcp",
       "version": "0.1.3",
+      "runtimeHint": "npx",
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-y"
+        }
+      ],
       "transport": {
         "type": "stdio"
-      }
+      },
+      "environmentVariables": [
+        {
+          "name": "MOODLE_BASE_URL",
+          "description": "Your school's Moodle address, for example https://moodle.myschool.edu",
+          "isRequired": true
+        },
+        {
+          "name": "MOODLE_TOKEN",
+          "description": "Your Moodle mobile web service key, copied from Preferences > User account > Security keys",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
     }
   ],
   "websiteUrl": "https://github.com/AnonymousOnyx22/moodle-student-mcp"

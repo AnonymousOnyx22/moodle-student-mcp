@@ -18,6 +18,8 @@
 
 ## Unreleased
 
+- server.json now carries the display title, the npx launch and the two environment variables. A registry page or an add from registry client asks for MOODLE_BASE_URL and MOODLE_TOKEN instead of starting the server without them and failing.
+
 - get_upcoming_due_dates now lists only the items that need action. Plain course events such as 'Course starts' and 'Course ends' are left out, the same way get_overdue leaves out events with nothing to do.
 - get_file only downloads a link that points at your school's Moodle site. A link from a course page or an announcement that points at another server is refused, so your key can no longer be sent to a third party.
 - get_upcoming_due_dates and get_overdue take an optional course_ids list, the same filter get_announcements already had. A question about one course no longer brings back every course.
