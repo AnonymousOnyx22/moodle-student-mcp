@@ -98,9 +98,11 @@ beforeAll(async () => {
           ] });
         }
         return send({ events: [
-          { name: "Lab 4 is due", timesort: now + 200000, courseid: 11, course: { id: 11, fullname: "Networking Basics" } },
-          { name: "Quiz 1 closes", timesort: now + 100000, courseid: 11, course: { id: 11, fullname: "Networking Basics" } },
-          { name: "Problem set 3", timesort: now + 300000, courseid: 14, course: { id: 14, fullname: "Data Structures" } },
+          { name: "Lab 4 is due", timesort: now + 200000, courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: true } },
+          { name: "Quiz 1 closes", timesort: now + 100000, courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: true } },
+          { name: "Problem set 3", timesort: now + 300000, courseid: 14, course: { id: 14, fullname: "Data Structures" }, action: { actionable: true } },
+          { name: "Course starts", timesort: now + 400000, courseid: 14, course: { id: 14, fullname: "Data Structures" }, action: { actionable: false } },
+          { name: "Course ends", timesort: now + 500000, courseid: 11, course: { id: 11, fullname: "Networking Basics" } },
         ] });
       }
       case "mod_assign_get_assignments":
@@ -212,6 +214,14 @@ describe("moodle-student-mcp", () => {
     const od = (await call(c, "get_overdue")).text;
     expect(od).toContain("Lab 2 is due");
     expect(od).not.toContain("Quiz closed");
+  });
+
+  it("leaves out course events that need no action", async () => {
+    const c = await connect();
+    const up = (await call(c, "get_upcoming_due_dates")).text;
+    expect(up).toContain("Quiz 1 closes");
+    expect(up).not.toContain("Course starts");
+    expect(up).not.toContain("Course ends");
   });
 
   it("keeps every course when no filter is given", async () => {

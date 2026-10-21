@@ -15,7 +15,7 @@
     },
     {
       "name": "get_upcoming_due_dates",
-      "description": "Lists up to 50 items due in the next 60 days across your courses, soonest first, with the course name and due date.",
+      "description": "Lists up to 50 items due in the next 60 days across your courses that still need action, soonest first, with the course name and due date. Plain course events such as 'Course starts' and 'Course ends' are left out because there is nothing to do about them.",
       "parameters": [
         {
           "name": "course_ids",

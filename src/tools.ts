@@ -81,11 +81,12 @@ export const tools: ToolDef<Api>[] = [
     name: "get_upcoming_due_dates",
     title: "Upcoming due dates",
     description:
-      "Answers 'what is due soon?' Lists up to 50 items due in the next 60 days across your courses, soonest first, with the course name and due date. Input: course_ids, an optional array of course IDs to limit the list; leave it out to cover all current courses. Ask: 'What's due in the next two weeks?'",
+      "Answers 'what is due soon?' Lists up to 50 items due in the next 60 days across your courses that still need action, soonest first, with the course name and due date. Course events such as 'Course starts' and 'Course ends' are left out because there is nothing to do about them. Input: course_ids, an optional array of course IDs to limit the list; leave it out to cover all current courses. Ask: 'What's due in the next two weeks?'",
     inputSchema: { course_ids: z.array(courseId).optional() },
     run: async ({ course_ids }, api) => {
       const now = Math.floor(Date.now() / 1000);
       const events = (await calendarEvents(api, now, now + 60 * DAY, course_ids))
+        .filter((e) => e.action?.actionable)
         .sort((a, b) => a.timesort - b.timesort)
         .slice(0, MAX_ITEMS);
       return bullets(

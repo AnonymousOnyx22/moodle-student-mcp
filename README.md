@@ -166,7 +166,7 @@ All tools are read only.
 | Tool | What it does |
 | --- | --- |
 | `get_my_courses` | Your current courses and their IDs |
-| `get_upcoming_due_dates` | Everything due in the next 60 days, soonest first. Takes an optional list of course IDs |
+| `get_upcoming_due_dates` | Items that still need action and are due in the next 60 days, soonest first. Plain course events such as 'Course starts' are left out. Takes an optional list of course IDs |
 | `get_overdue` | Past due items that still need action. Takes an optional list of course IDs |
 | `get_assignments` | Assignments for a course with due dates and submission status |
 | `get_my_grades` | Current grade for each course |

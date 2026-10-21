@@ -16,9 +16,22 @@ function ts(iso: string): number {
 }
 
 const EVENTS = [
-  { name: "Quiz 1 closes", timesort: ts("2026-10-23T23:59:00Z"), courseid: 11, course: { id: 11, fullname: "Networking Basics" } },
-  { name: "Lab 4 report", timesort: ts("2026-10-28T23:59:00Z"), courseid: 11, course: { id: 11, fullname: "Networking Basics" } },
-  { name: "Problem set 3", timesort: ts("2026-11-02T23:59:00Z"), courseid: 12, course: { id: 12, fullname: "Data Structures" } },
+  { name: "Quiz 1 closes", timesort: ts("2026-10-23T23:59:00Z"), courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: true } },
+  { name: "Lab 4 report", timesort: ts("2026-10-28T23:59:00Z"), courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: true } },
+  { name: "Problem set 3", timesort: ts("2026-11-02T23:59:00Z"), courseid: 12, course: { id: 12, fullname: "Data Structures" }, action: { actionable: true } },
+  {
+    name: "Course starts",
+    timesort: ts("2026-10-26T08:00:00Z"),
+    courseid: 11,
+    course: { id: 11, fullname: "Networking Basics" },
+    action: { actionable: false },
+  },
+  {
+    name: "Course ends",
+    timesort: ts("2026-12-11T23:59:00Z"),
+    courseid: 11,
+    course: { id: 11, fullname: "Networking Basics" },
+  },
   {
     name: "Lab 2 report",
     timesort: ts("2026-10-16T23:59:00Z"),

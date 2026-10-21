@@ -18,7 +18,7 @@ Parameters: none.
 Example call: `{"name":"get_my_courses","arguments":{}}`
 
 ### get_upcoming_due_dates
-Lists up to 50 items due in the next 60 days across your courses, soonest first, with the course name and due date.
+Lists up to 50 items due in the next 60 days across your courses that still need action, soonest first, with the course name and due date. Plain course events such as 'Course starts' and 'Course ends' are left out because there is nothing to do about them.
 Parameters: course_ids (optional, array of course IDs from get_my_courses to limit the list, string or number items; leave it out to cover all current courses).
 Example call: `{"name":"get_upcoming_due_dates","arguments":{"course_ids":[11]}}`
 
