@@ -3,6 +3,8 @@ import { ApiError, createClient, describeMoodleError, type HttpClient } from "./
 export interface MoodleApi {
   call<T = any>(fn: string, params?: Record<string, unknown>): Promise<T>;
   userId(): Promise<number>;
+  baseUrl: string;
+  token: string;
 }
 
 /** Moodle wants arrays as courseids[0]=1&courseids[1]=2. */
@@ -26,6 +28,8 @@ export function createMoodleApi(baseUrl: string, token: string, fetchImpl?: type
   let cachedUser: number | undefined;
 
   const api: MoodleApi = {
+    baseUrl,
+    token,
     async call<T>(fn: string, params: Record<string, unknown> = {}): Promise<T> {
       const data = await http.get<any>("webservice/rest/server.php", { wsfunction: fn, ...flatten(params) });
       if (data && typeof data === "object" && !Array.isArray(data) && data.exception) {

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { MoodleApi } from "./moodle.js";
 import { type ToolDef, bullets, fmtUnix, stripHtml } from "./core/tools.js";
+import { ApiError, describeStatus } from "./core/http.js";
 
 type Api = MoodleApi;
 
@@ -158,7 +159,12 @@ export const tools: ToolDef<Api>[] = [
       if (!sections?.length) return "This course has no content.";
       return sections
         .map((s) => {
-          const mods = (s.modules ?? []).slice(0, 40).map((m: any) => `  - ${m.name} (${m.modname})`);
+          const mods = (s.modules ?? []).slice(0, 40).map((m: any) => {
+        const files = (m.contents ?? [])
+          .filter((c: any) => c?.type === "file" && c?.fileurl)
+          .map((c: any) => c.fileurl);
+        return `  - ${m.name} (${m.modname})${files.length ? " files: " + files.join(", ") : ""}`;
+      });
           return `${s.name || "Section"}\n${mods.join("\n") || "  (empty)"}`;
         })
         .join("\n\n");
@@ -183,6 +189,25 @@ export const tools: ToolDef<Api>[] = [
         }
       }
       return bullets(lines, "No recent announcements.");
+    },
+  },
+  {
+    name: "get_file",
+    title: "Course file",
+    description:
+      "Answers 'what does this course file say?' Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url and returns its readable text. Input: file_url, the link from get_course_content. Ask: 'Read the Week 3 slides PDF.'",
+    inputSchema: { file_url: z.string().describe("URL of the course file to download. Use the link from get_course_content.") },
+    run: async ({ file_url }, api) => {
+      let url = String(file_url).trim();
+      if (!/^https?:\/\//i.test(url)) url = api.baseUrl + "/" + url.replace(/^\/+/, "");
+      const u = new URL(url);
+      if (!u.searchParams.has("token") && api.token) u.searchParams.set("token", api.token);
+      const res = await fetch(u.toString());
+      if (!res.ok) throw new ApiError(describeStatus(res.status), res.status);
+      const buf = await res.arrayBuffer();
+      const text = new TextDecoder("utf-8", { fatal: false }).decode(buf).trim();
+      if (!text) return "This file is empty.";
+      return text.length > 20000 ? text.slice(0, 20000) + "\n[truncated]" : text;
     },
   },
 ];

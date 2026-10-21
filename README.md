@@ -63,6 +63,7 @@ All tools are read only.
 | `get_my_grades` | Current grade for each course |
 | `get_course_grade_items` | Every graded item in a course with mark and percentage |
 | `get_course_content` | Sections and activities for a course |
+| `get_file` | Download a course file and return its text |
 | `get_announcements` | Recent announcements |
 
 ## Privacy and security

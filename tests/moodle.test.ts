@@ -129,13 +129,13 @@ async function call(client: Client, name: string, args: Record<string, unknown> 
 describe("moodle-student-mcp", () => {
   it("exposes only read-only tools", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(8);
+    expect(tools.length).toBe(9);
     for (const t of tools) expect(t.annotations?.readOnlyHint).toBe(true);
   });
 
   it("describes every tool with the question it answers, its inputs and a sample prompt", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(8);
+    expect(tools.length).toBe(9);
     for (const t of tools) {
       expect(t.description, t.name).toMatch(/^Answers '/);
       expect(t.description, t.name).toMatch(/Ask: '/);

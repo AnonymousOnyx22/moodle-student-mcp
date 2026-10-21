@@ -47,6 +47,11 @@ Lists the sections of one course, such as weeks or topics, with up to 40 activit
 Parameters: course_id (required, Moodle course ID from get_my_courses, string or number).
 Example call: `{"name":"get_course_content","arguments":{"course_id":11}}`
 
+### get_file
+Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url and returns its readable text.
+Parameters: file_url (required, URL of the course file to download, string).
+Example call: `{"name":"get_file","arguments":{"file_url":"https://moodle.example.edu/webservice/pluginfile.php/1/mod_resource/content/0/slides.pdf"}}`
+
 ### get_announcements
 Lists the latest news forum posts with subject and text, up to 5 posts from each of up to 10 news forums.
 Parameters: course_ids (optional, array of course IDs from get_my_courses to limit the search, string or number items; leave it out to cover all current courses).

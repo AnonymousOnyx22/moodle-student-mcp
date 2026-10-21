@@ -71,6 +71,19 @@
       "example": { "name": "get_course_content", "arguments": { "course_id": 11 } }
     },
     {
+      "name": "get_file",
+      "description": "Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url and returns its readable text.",
+      "parameters": [
+        {
+          "name": "file_url",
+          "type": "string",
+          "required": true,
+          "description": "URL of the course file to download. Use the link from get_course_content."
+        }
+      ],
+      "example": { "name": "get_file", "arguments": { "file_url": "https://moodle.example.edu/webservice/pluginfile.php/1/mod_resource/content/0/slides.pdf" } }
+    },
+    {
       "name": "get_announcements",
       "description": "Lists the latest news forum posts with subject and text, up to 5 posts from each of up to 10 news forums.",
       "parameters": [
