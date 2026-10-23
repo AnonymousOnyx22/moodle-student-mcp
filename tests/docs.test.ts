@@ -22,7 +22,9 @@ const serverJson = JSON.parse(readFileSync(new URL("../server.json", import.meta
   websiteUrl?: string;
 };
 const indexSource = readFileSync(new URL("../src/index.ts", import.meta.url), "utf8");
+const keyGuide = readFileSync(new URL("../docs/get-moodle-mobile-web-service-key.md", import.meta.url), "utf8");
 const repoUrl = "https://github.com/AnonymousOnyx22/moodle-student-mcp";
+const keyGuideUrl = `${repoUrl}/blob/main/docs/get-moodle-mobile-web-service-key.md`;
 const glama = JSON.parse(readFileSync(new URL("../glama.json", import.meta.url), "utf8")) as {
   tools?: { name: string; parameters?: { name: string; required?: boolean }[]; example?: { name: string; arguments: unknown } }[];
 };
@@ -102,6 +104,18 @@ describe("the published package carries the metadata files", () => {
   it("points the package homepage and the server.json website at the source repository", () => {
     expect(pkg.homepage).toBe(repoUrl);
     expect(serverJson.websiteUrl).toBe(repoUrl);
+  });
+});
+
+describe("the README links the guide to the mobile web service key", () => {
+  it("links the guide from Quick start", () => {
+    const quickStart = (readme.split("## Quick start")[1] ?? "").split("\n## ")[0];
+    expect(quickStart).toContain(keyGuideUrl);
+  });
+
+  it("names the Security keys page and the variable the key goes in", () => {
+    expect(keyGuide).toContain(SECURITY_KEYS_PATH);
+    expect(keyGuide).toContain("MOODLE_TOKEN");
   });
 });
 

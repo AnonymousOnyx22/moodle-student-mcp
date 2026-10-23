@@ -216,7 +216,7 @@ The app replies: Three announcements. Lab 3 is due Friday, so bring your laptop 
 
 ## Quick start
 
-1. In Moodle, open your profile menu, go to **Preferences > User account > Security keys**. Copy the key for **Moodle mobile web service**.
+1. In Moodle, open your profile menu, go to **Preferences > User account > Security keys**. Copy the key for **Moodle mobile web service**. The [guide to getting your Moodle mobile web service key](https://github.com/AnonymousOnyx22/moodle-student-mcp/blob/main/docs/get-moodle-mobile-web-service-key.md) has each step, plus what to do when the page or the key is missing.
 2. Put your school's Moodle address and that key into the command or the config block above.
 3. Restart your AI app and ask one of the questions above.
 
