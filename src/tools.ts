@@ -14,6 +14,47 @@ const MAX_COURSE_ASSIGNMENTS = 25;
 /** Events asked for when a course filter will drop some of them. */
 const FILTERED_EVENTS = 200;
 
+/** The file name Moodle sent, or the last part of the link when it sent none. */
+function fileName(file: any): string {
+  if (file?.filename) return String(file.filename);
+  try {
+    const u = new URL(String(file?.fileurl ?? ""), "https://placeholder.invalid");
+    const last = u.pathname.split("/").filter(Boolean).pop();
+    if (!last) return "file";
+    try {
+      return decodeURIComponent(last);
+    } catch {
+      return last;
+    }
+  } catch {
+    return "file";
+  }
+}
+
+/** Remove the user's key from a query string, even when the link cannot be parsed. */
+function stripKeyParams(raw: string): string {
+  return raw
+    .replace(/([?&])(?:wstoken|token)=[^&#]*/gi, "$1")
+    .replace(/\?&/, "?")
+    .replace(/&&/g, "&")
+    .replace(/[?&](?=$|#)/, "");
+}
+
+/** A course file link with the user's key removed, so it is safe to show in a chat. */
+function fileLink(file: any): string {
+  const raw = String(file?.fileurl ?? "");
+  try {
+    const u = new URL(raw, "https://placeholder.invalid");
+    for (const name of [...u.searchParams.keys()]) {
+      if (/^(ws)?token$/i.test(name)) u.searchParams.delete(name);
+    }
+    // Keep a relative link relative, so the answer does not name a made up host.
+    return /^[a-z][a-z0-9+.-]*:/i.test(raw) || raw.startsWith("//") ? u.toString() : u.pathname + u.search + u.hash;
+  } catch {
+    return stripKeyParams(raw);
+  }
+}
+
 interface Course {
   id: number;
   fullname: string;
@@ -266,7 +307,7 @@ export const tools: ToolDef<Api>[] = [
     name: "get_course_content",
     title: "Course content",
     description:
-      "Answers 'what's in this course?' Lists the sections of one course, such as weeks or topics, with up to 40 activities in each, such as pages, quizzes and forums. Input: course_id, the ID from get_my_courses. Ask: 'What materials are posted in Networking Basics?'",
+      "Answers 'what's in this course?' Lists the sections of one course, such as weeks or topics, with up to 40 activities in each, such as pages, quizzes and forums. Each file shows its name and a link with your key removed, so the link is safe to show in a chat and get_file can still open it. Input: course_id, the ID from get_my_courses. Ask: 'What materials are posted in Networking Basics?'",
     inputSchema: { course_id: courseId },
     run: async ({ course_id }, api) => {
       const sections = await api.call<any[]>("core_course_get_contents", { courseid: course_id });
@@ -274,11 +315,11 @@ export const tools: ToolDef<Api>[] = [
       return sections
         .map((s) => {
           const mods = (s.modules ?? []).slice(0, 40).map((m: any) => {
-        const files = (m.contents ?? [])
-          .filter((c: any) => c?.type === "file" && c?.fileurl)
-          .map((c: any) => c.fileurl);
-        return `  - ${m.name} (${m.modname})${files.length ? " files: " + files.join(", ") : ""}`;
-      });
+            const files = (m.contents ?? [])
+              .filter((c: any) => c?.type === "file" && c?.fileurl)
+              .map((c: any) => `${fileName(c)} (${fileLink(c)})`);
+            return `  - ${m.name} (${m.modname})${files.length ? " files: " + files.join(", ") : ""}`;
+          });
           return `${s.name || "Section"}\n${mods.join("\n") || "  (empty)"}`;
         })
         .join("\n\n");

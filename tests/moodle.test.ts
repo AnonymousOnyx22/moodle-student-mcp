@@ -140,7 +140,25 @@ beforeAll(async () => {
           { itemname: null, gradeformatted: "88.50", percentageformatted: "88.50 %" },
         ] }] });
       case "core_course_get_contents":
-        return send([{ name: "Week 1", modules: [{ name: "Intro slides", modname: "resource" }] }]);
+        return send([{ name: "Week 1", modules: [
+          {
+            name: "Intro slides",
+            modname: "resource",
+            contents: [
+              {
+                type: "file",
+                filename: "week1-slides.pdf",
+                fileurl: `${base}/webservice/pluginfile.php/1/mod_resource/content/0/week1-slides.pdf?forcedownload=1&token=good`,
+              },
+              {
+                type: "file",
+                filename: "notes.txt",
+                fileurl: `${base}/webservice/pluginfile.php/1/mod_resource/content/0/notes.txt?token=good`,
+              },
+            ],
+          },
+          { name: "Week 1 quiz", modname: "quiz" },
+        ] }]);
       case "mod_forum_get_forums_by_courses": {
         if (q.wstoken === "forumtoken") {
           return send({ exception: "moodle_exception", errorcode: "invalidtoken", message: "Invalid token - token not found" });
@@ -359,6 +377,23 @@ describe("moodle-student-mcp", () => {
     const ann = (await call(c, "get_announcements")).text;
     expect(ann).toContain("Welcome");
     expect(ann).toContain("Hello class");
+  });
+
+  it("shows file names and links without the key in course content", async () => {
+    const { text, isError } = await call(await connect(), "get_course_content", { course_id: 11 });
+    expect(isError).toBe(false);
+    expect(text).toContain("week1-slides.pdf");
+    expect(text).toContain("notes.txt");
+    expect(text).not.toContain("token");
+    expect(text).toContain("forcedownload=1");
+
+    const link = /week1-slides\.pdf \((http[^)]+)\)/.exec(text)?.[1];
+    expect(link).toBeTruthy();
+    seenFiles.length = 0;
+    const file = await call(await connect(), "get_file", { file_url: link });
+    expect(file.isError).toBe(false);
+    expect(file.text).toContain("Week 3 slides");
+    expect(seenFiles[0]?.token).toBe("good");
   });
 
   it("downloads a file from the school's own site and sends the key there", async () => {

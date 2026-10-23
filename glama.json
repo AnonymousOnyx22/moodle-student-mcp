@@ -86,7 +86,7 @@
     },
     {
       "name": "get_course_content",
-      "description": "Lists the sections of one course, such as weeks or topics, with up to 40 activities in each, such as pages, quizzes and forums.",
+      "description": "Lists the sections of one course, such as weeks or topics, with up to 40 activities in each, such as pages, quizzes and forums. Each file shows its name and a link with your key removed, ready for get_file.",
       "parameters": [
         {
           "name": "course_id",

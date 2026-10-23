@@ -2,6 +2,7 @@
 
 ## 0.1.4
 
+- get_course_content now shows each course file by name and gives a link with your key removed. The key no longer appears in the chat, and get_file adds it back when it opens a link on your school's own site.
 - The README Tools table is checked against src/tools.ts in the tests. A new tool needs a row in that table, and every row names the parameters the tool takes.
 - The README has an Install section with one line for Claude Code, Cursor and VS Code, next to the Claude Desktop config block. A reader can copy one line and start the server instead of writing the JSON by hand.
 - New tool get_missing_work. It answers "what do I still owe?" in one call. It looks through the assignments of your current courses and lists the ones you have not handed in yet, drafts included, with the course name and the due date. It takes the same optional course_ids filter as the other tools. A course the school server will not open is named at the end of the list and the rest still shows.

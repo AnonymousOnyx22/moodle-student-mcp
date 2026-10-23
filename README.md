@@ -227,7 +227,7 @@ All tools are read only.
 | `get_missing_work` | Assignments you have not handed in yet, drafts included, with the course name and the due date. Takes an optional `course_ids` list of course IDs |
 | `get_my_grades` | Current grade for each course |
 | `get_course_grade_items` | Every graded item in a course with mark and percentage. Takes a `course_id` from `get_my_courses` |
-| `get_course_content` | Sections and activities for a course. Takes a `course_id` from `get_my_courses` |
+| `get_course_content` | Sections and activities for a course, with file names and links that leave your key out. Takes a `course_id` from `get_my_courses` |
 | `get_file` | Download a course file from your school's Moodle site and return its text. Takes a `file_url` from `get_course_content` |
 | `get_announcements` | Recent announcements, with any course Moodle will not open left out. Takes an optional `course_ids` list of course IDs |
 
