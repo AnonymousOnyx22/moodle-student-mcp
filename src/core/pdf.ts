@@ -130,6 +130,11 @@ function extractTextFromContent(content: string): string {
   return parts.join(" ").replace(/\s+/g, " ").trim();
 }
 
+// A course file can be anything, so decompression is capped: a tiny crafted stream must not expand into gigabytes.
+const MAX_STREAM_BYTES = 16 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 64 * 1024 * 1024;
+const MAX_TEXT_CHARS = 2_000_000;
+
 export function extractPdfText(buf: ArrayBuffer | Uint8Array): string | null {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
   const data = Buffer.from(bytes);
@@ -139,18 +144,21 @@ export function extractPdfText(buf: ArrayBuffer | Uint8Array): string | null {
   if (!header.includes("%PDF")) return null;
 
   let result = "";
+  let inflatedTotal = 0;
   // Look for stream objects with FlateDecode
   // Pattern: stream ... endstream
   const str = data.toString("latin1");
   const streamRe = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
   let match;
   while ((match = streamRe.exec(str)) !== null) {
+    if (inflatedTotal > MAX_TOTAL_BYTES || result.length > MAX_TEXT_CHARS) break;
     const streamData = Buffer.from(match[1], "latin1");
     // Try to find if this stream is FlateDecode - look backwards from stream
     const before = str.slice(Math.max(0, match.index - 2000), match.index);
     if (/\/Filter\s*\/FlateDecode/i.test(before) || /\/Filter\s*\[\s*\/FlateDecode/i.test(before)) {
       try {
-        const inflated = inflateSync(streamData);
+        const inflated = inflateSync(streamData, { maxOutputLength: MAX_STREAM_BYTES });
+        inflatedTotal += inflated.length;
         const inflatedStr = inflated.toString("latin1");
         const text = extractTextFromContent(inflatedStr);
         if (text) {
