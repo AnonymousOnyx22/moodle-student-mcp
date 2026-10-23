@@ -634,7 +634,7 @@ export const tools: ToolDef<Api>[] = [
     name: "get_file",
     title: "Course file",
     description:
-      "Answers 'what does this course file say?' Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url. Plain text and HTML files come back as readable text. A PDF with readable text comes back as text, and a PDF with no extractable text comes back with its file name, a link with your key removed and a note to open it in Moodle. Another file that is not text comes back with its file name, a link with your key removed and a note to open it in Moodle. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server. Input: file_url, the link from get_course_content. Ask: 'Read the Week 3 slides PDF.'",
+      "Answers 'what does this course file say?' Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url. Supported types: plain text, HTML and PDF. Plain text and HTML files come back as readable text. A PDF with readable text comes back as text, and a PDF with no extractable text comes back with its file name, a link with your key removed and a note to open it in Moodle. Any other file type is not supported and comes back with its file name, a link with your key removed and a note that only plain text, HTML and PDF are supported, with a note to open it in Moodle. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server. Input: file_url, the link from get_course_content. Ask: 'Read the Week 3 slides PDF.'",
     inputSchema: { file_url: z.string().describe("URL of the course file to download. Use the link from get_course_content.") },
     run: async ({ file_url }, api) => {
       let url = String(file_url).trim();
@@ -675,7 +675,7 @@ This file is bigger than ${MAX_FILE_BYTES / 1024 / 1024} MB, so it was not downl
       }
       const type = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
       if (type && !isTextType(type)) {
-        return `File: ${name}\nLink: ${link}\nThis file is ${type}, not plain text. Open it in Moodle to read it.`;
+        return `File: ${name}\nLink: ${link}\nThis file is ${type}. get_file supports plain text, HTML and PDF only. Open it in Moodle to read it.`;
       }
       const text = new TextDecoder("utf-8", { fatal: false }).decode(buf).trim();
       if (!text) return "This file is empty.";
