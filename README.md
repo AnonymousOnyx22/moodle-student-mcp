@@ -204,11 +204,11 @@ Tool call: get_announcements
 {"name":"get_announcements","arguments":{}}
 
 The server answers:
-- Lab 3 is due Friday (Wed, Oct 21, 9:15 a.m. UTC)
+- Lab 3 is due Friday (Networking Basics, Wed, Oct 21, 9:15 a.m. UTC)
   Bring your laptop and the patched topology sheet.
-- Week 6 reading (Tue, Oct 20, 2:05 p.m. UTC)
+- Week 6 reading (Networking Basics, Tue, Oct 20, 2:05 p.m. UTC)
   Read chapters 4 and 5 before the quiz.
-- Room change for Thursday (Mon, Oct 19, 4:40 p.m. UTC)
+- Room change for Thursday (Data Structures, Mon, Oct 19, 4:40 p.m. UTC)
   Data Structures meets in room B12 this week.
 
 The app replies: Three announcements. Lab 3 is due Friday, so bring your laptop and the patched topology sheet. Week 6 reading says to read chapters 4 and 5 before the quiz. Data Structures has a room change for Thursday.
@@ -253,7 +253,7 @@ All tools are read only.
 | `get_course_grade_items` | Every graded item in a course with mark and percentage. Takes a `course_id` from `get_my_courses` |
 | `get_course_content` | Sections and activities for a course, with file names and links that leave your key out. Takes a `course_id` from `get_my_courses` |
 | `get_file` | Download a course file from your school's Moodle site and return its text. A PDF or another file that is not text comes back with its file name, a link and a note to open it in Moodle. Takes a `file_url` from `get_course_content` |
-| `get_announcements` | Recent announcements, with any course Moodle will not open left out. Takes an optional `course_ids` list of course IDs |
+| `get_announcements` | Recent announcements with the course name and date on each one, and any course Moodle will not open left out. Takes an optional `course_ids` list of course IDs |
 
 ## Privacy and security
 

@@ -137,7 +137,7 @@
     },
     {
       "name": "get_announcements",
-      "description": "Lists the latest news forum posts with subject and text, up to 5 posts from each of up to 10 news forums. A course or forum the school server will not open is left out and the rest still shows.",
+      "description": "Lists the latest news forum posts with subject, course name and text, up to 5 posts from each of up to 10 news forums. A course or forum the school server will not open is left out and the rest still shows.",
       "parameters": [
         {
           "name": "course_ids",

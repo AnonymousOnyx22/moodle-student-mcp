@@ -439,6 +439,7 @@ describe("moodle-student-mcp", () => {
     const ann = (await call(c, "get_announcements")).text;
     expect(ann).toContain("Welcome");
     expect(ann).toContain("Hello class");
+    expect(ann).toContain("Welcome (Networking Basics,");
   });
 
   it("shows file names and links without the key in course content", async () => {

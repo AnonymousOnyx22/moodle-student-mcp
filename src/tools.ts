@@ -584,7 +584,7 @@ export const tools: ToolDef<Api>[] = [
     name: "get_announcements",
     title: "Announcements",
     description:
-      "Answers 'any new announcements?' Lists the latest news forum posts with subject and text, up to 5 posts from each of up to 10 news forums. A course or forum the school server will not open is left out and the rest still shows. Input: course_ids, an optional array of course IDs to limit the search; leave it out to cover all current courses. Ask: 'Any new announcements from my teachers?'",
+      "Answers 'any new announcements?' Lists the latest news forum posts with subject, course name and text, up to 5 posts from each of up to 10 news forums. A course or forum the school server will not open is left out and the rest still shows. Input: course_ids, an optional array of course IDs to limit the search; leave it out to cover all current courses. Ask: 'Any new announcements from my teachers?'",
     inputSchema: { course_ids: z.array(courseId).optional() },
     run: async ({ course_ids }, api) => {
       const courses = course_ids?.length ? [] : await myCourses(api);
@@ -594,7 +594,7 @@ export const tools: ToolDef<Api>[] = [
 
       const news = await readNews(api, ids, courseLabel);
       const lines = news.posts.map(
-        (p) => `${p.subject} (${fmtUnix(p.modified)})\n  ${stripHtml(p.message, 400).replace(/\n/g, " ")}`,
+        (p) => `${p.subject} (${p.course}, ${fmtUnix(p.modified)})\n  ${stripHtml(p.message, 400).replace(/\n/g, " ")}`,
       );
 
       // Nothing at all came back, so the first problem is the answer.
