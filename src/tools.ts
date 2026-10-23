@@ -4,6 +4,29 @@ import { type ToolDef, bullets, fmtUnix, stripHtml } from "./core/tools.js";
 import { ApiError, describeStatus, isSiteWideError, sameOrigin, statusSetupKey } from "./core/http.js";
 import { extractPdfText } from "./core/pdf.js";
 
+/** The largest course file get_file downloads. */
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
+
+/** Reads a response body, giving up (null) once it passes max bytes or when the server says it is bigger. */
+export async function readCapped(res: Response, max: number): Promise<ArrayBuffer | null> {
+  const declared = Number(res.headers.get("content-length") ?? "");
+  if (Number.isFinite(declared) && declared > max) { await res.body?.cancel().catch(() => {}); return null; }
+  if (!res.body) return res.arrayBuffer();
+  const reader = res.body.getReader(), chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) { await reader.cancel().catch(() => {}); return null; }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const c of chunks) { out.set(c, at); at += c.byteLength; }
+  return out.buffer;
+}
+
 type Api = MoodleApi;
 
 const courseId = z.union([z.string(), z.number()]).describe("Moodle course ID. Use get_my_courses to find it.");
@@ -632,9 +655,13 @@ export const tools: ToolDef<Api>[] = [
       if (!u.searchParams.has("token") && api.token) u.searchParams.set("token", api.token);
       const res = await fetch(u.toString());
       if (!res.ok) throw new ApiError(describeStatus(res.status), res.status, undefined, statusSetupKey(res.status));
-      const buf = await res.arrayBuffer();
       const name = fileName({ fileurl: u.toString() });
       const link = fileLink({ fileurl: u.toString() });
+      // big files such as lecture videos are not pulled into memory; the link is enough to open them in Moodle
+      const buf = await readCapped(res, MAX_FILE_BYTES);
+      if (!buf) return `File: ${name}
+Link: ${link}
+This file is bigger than ${MAX_FILE_BYTES / 1024 / 1024} MB, so it was not downloaded. Open it in Moodle instead.`;
       // A PDF header can sit a little way into the file, so look at the start.
       const head = new TextDecoder("latin1").decode(buf.slice(0, 1024));
       const isPdf = head.includes("%PDF") || (res.headers.get("content-type") ?? "").toLowerCase().includes("pdf");
