@@ -59,6 +59,7 @@ Example call: `{"name":"get_course_content","arguments":{"course_id":11}}`
 
 ### get_file
 Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url. Plain text and HTML files come back as readable text. A PDF with readable text comes back as text, and a PDF with no extractable text comes back with its file name, a link with your key removed and a note to open it in Moodle. Any other file type is not supported and comes back with its file name, a link with your key removed and a note that only plain text, HTML and PDF are supported, with a note to open it in Moodle. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server. A link that points somewhere else is refused.
+Files over 25 MB are not downloaded; the answer gives their name and link instead.
 Parameters: file_url (required, URL of the course file to download, string).
 Example call: `{"name":"get_file","arguments":{"file_url":"https://moodle.example.edu/webservice/pluginfile.php/1/mod_resource/content/0/slides.pdf"}}`
 

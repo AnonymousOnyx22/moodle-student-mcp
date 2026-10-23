@@ -259,6 +259,7 @@ All tools are read only.
 
 - Your key stays on your computer. It is only sent to your own school's Moodle address.
 - Nothing is sent to any other server by this project.
+- `get_file` downloads files up to 25 MB. A bigger file, such as a lecture video, is not downloaded; you get its name and link to open it in Moodle instead.
 - `get_file` only downloads a link that points at your school's Moodle address. A link that points somewhere else is refused, so a link in a course page or an announcement can never take your key.
 - Every tool is marked read only. You can reset your key any time on the Security keys page.
 
