@@ -40,6 +40,11 @@ function stripKeyParams(raw: string): string {
     .replace(/[?&](?=$|#)/, "");
 }
 
+/** True when the content type is one a text decoder can read. */
+function isTextType(type: string): boolean {
+  return type.startsWith("text/") || /(json|xml|javascript|ecmascript)/.test(type);
+}
+
 /** A course file link with the user's key removed, so it is safe to show in a chat. */
 function fileLink(file: any): string {
   const raw = String(file?.fileurl ?? "");
@@ -405,7 +410,7 @@ export const tools: ToolDef<Api>[] = [
     name: "get_file",
     title: "Course file",
     description:
-      "Answers 'what does this course file say?' Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url and returns its readable text. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server. Input: file_url, the link from get_course_content. Ask: 'Read the Week 3 slides PDF.'",
+      "Answers 'what does this course file say?' Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url. Plain text and HTML files come back as readable text. A PDF or another file that is not text comes back with its file name, a link with your key removed and a note to open it in Moodle. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server. Input: file_url, the link from get_course_content. Ask: 'Read the Week 3 slides PDF.'",
     inputSchema: { file_url: z.string().describe("URL of the course file to download. Use the link from get_course_content.") },
     run: async ({ file_url }, api) => {
       let url = String(file_url).trim();
@@ -427,6 +432,17 @@ export const tools: ToolDef<Api>[] = [
       const res = await fetch(u.toString());
       if (!res.ok) throw new ApiError(describeStatus(res.status), res.status, undefined, statusSetupKey(res.status));
       const buf = await res.arrayBuffer();
+      const name = fileName({ fileurl: u.toString() });
+      const link = fileLink({ fileurl: u.toString() });
+      // A PDF header can sit a little way into the file, so look at the start.
+      const head = new TextDecoder("latin1").decode(buf.slice(0, 1024));
+      if (head.includes("%PDF")) {
+        return `File: ${name}\nLink: ${link}\nThis is a PDF, so it cannot be read as text. Open it in Moodle to read it.`;
+      }
+      const type = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+      if (type && !isTextType(type)) {
+        return `File: ${name}\nLink: ${link}\nThis file is ${type}, not plain text. Open it in Moodle to read it.`;
+      }
       const text = new TextDecoder("utf-8", { fatal: false }).decode(buf).trim();
       if (!text) return "This file is empty.";
       return text.length > 20000 ? text.slice(0, 20000) + "\n[truncated]" : text;

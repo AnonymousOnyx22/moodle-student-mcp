@@ -36,6 +36,18 @@ beforeAll(async () => {
     seenParams.push(q);
     if (url.pathname.startsWith("/webservice/pluginfile.php")) {
       seenFiles.push({ path: url.pathname, token: q.token });
+      if (url.pathname.endsWith("/binary.pdf")) {
+        res.writeHead(200, { "content-type": "application/pdf" });
+        return res.end("%PDF-1.4\n1 0 obj\nbinary noise\n%%EOF");
+      }
+      if (url.pathname.endsWith("/fake.txt")) {
+        res.writeHead(200, { "content-type": "text/plain" });
+        return res.end("%PDF-1.4\nnot really text\n%%EOF");
+      }
+      if (url.pathname.endsWith("/diagram.png")) {
+        res.writeHead(200, { "content-type": "image/png" });
+        return res.end("not text at all");
+      }
       res.writeHead(200, { "content-type": "text/plain" });
       return res.end("Week 3 slides: how a packet travels");
     }
@@ -415,6 +427,42 @@ describe("moodle-student-mcp", () => {
     expect(isError).toBe(false);
     expect(text).toContain("Week 3 slides");
     expect(seenFiles[0].token).toBe("good");
+  });
+
+  it("explains a PDF instead of returning its bytes", async () => {
+    seenFiles.length = 0;
+    const { text, isError } = await call(await connect(), "get_file", {
+      file_url: `${base}/webservice/pluginfile.php/1/mod_resource/content/0/binary.pdf`,
+    });
+    expect(isError).toBe(false);
+    expect(text).toContain("File: binary.pdf");
+    expect(text).toContain("Open it in Moodle");
+    expect(text).toContain(`${base}/webservice/pluginfile.php/1/mod_resource/content/0/binary.pdf`);
+    expect(text).not.toContain("%PDF");
+    expect(text).not.toContain("binary noise");
+    expect(text).not.toContain("token");
+    expect(seenFiles[0]?.token).toBe("good");
+  });
+
+  it("spots a PDF even when the server calls it text", async () => {
+    const { text, isError } = await call(await connect(), "get_file", {
+      file_url: `${base}/webservice/pluginfile.php/1/mod_resource/content/0/fake.txt`,
+    });
+    expect(isError).toBe(false);
+    expect(text).toContain("File: fake.txt");
+    expect(text).toContain("This is a PDF");
+    expect(text).not.toContain("%PDF");
+  });
+
+  it("explains a file with a content type that is not text", async () => {
+    const { text, isError } = await call(await connect(), "get_file", {
+      file_url: `${base}/webservice/pluginfile.php/1/mod_resource/content/0/diagram.png`,
+    });
+    expect(isError).toBe(false);
+    expect(text).toContain("File: diagram.png");
+    expect(text).toContain("image/png");
+    expect(text).toContain("Open it in Moodle");
+    expect(text).not.toContain("not text at all");
   });
 
   it("refuses a file link on another server and keeps the key off it", async () => {

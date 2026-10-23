@@ -2,6 +2,7 @@
 
 ## 0.1.4
 
+- get_file now tells you when a file is a PDF or another kind of file it cannot read as text. It shows the file name, a link with your key removed and a note to open it in Moodle, instead of a long block of garbled characters.
 - get_course_content now shows each course file by name and gives a link with your key removed. The key no longer appears in the chat, and get_file adds it back when it opens a link on your school's own site.
 - The README Tools table is checked against src/tools.ts in the tests. A new tool needs a row in that table, and every row names the parameters the tool takes.
 - The README has an Install section with one line for Claude Code, Cursor and VS Code, next to the Claude Desktop config block. A reader can copy one line and start the server instead of writing the JSON by hand.

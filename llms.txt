@@ -53,7 +53,7 @@ Parameters: course_id (required, Moodle course ID from get_my_courses, string or
 Example call: `{"name":"get_course_content","arguments":{"course_id":11}}`
 
 ### get_file
-Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url and returns its readable text. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server. A link that points somewhere else is refused.
+Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url. Plain text and HTML files come back as readable text. A PDF or another file that is not text comes back with its file name, a link with your key removed and a note to open it in Moodle. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server. A link that points somewhere else is refused.
 Parameters: file_url (required, URL of the course file to download, string).
 Example call: `{"name":"get_file","arguments":{"file_url":"https://moodle.example.edu/webservice/pluginfile.php/1/mod_resource/content/0/slides.pdf"}}`
 
