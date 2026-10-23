@@ -102,20 +102,18 @@ beforeAll(async () => {
         ]);
       case "core_calendar_get_action_events_by_timeframe": {
         const from = Number(q.timesortfrom);
-        if (from < now - 86400) {
-          return send({ events: [
-            { name: "Lab 2 is due", timesort: now - 86400, courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: true } },
-            { name: "Quiz closed", timesort: now - 90000, courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: false } },
-            { name: "Essay draft", timesort: now - 200000, courseid: 14, course: { id: 14, fullname: "Data Structures" }, action: { actionable: true } },
-          ] });
-        }
-        return send({ events: [
+        const to = Number(q.timesortto);
+        const events = [
+          { name: "Lab 2 is due", timesort: now - 86400, courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: true } },
+          { name: "Quiz closed", timesort: now - 90000, courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: false } },
+          { name: "Essay draft", timesort: now - 200000, courseid: 14, course: { id: 14, fullname: "Data Structures" }, action: { actionable: true } },
           { name: "Lab 4 is due", timesort: now + 200000, courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: true } },
           { name: "Quiz 1 closes", timesort: now + 100000, courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: true } },
           { name: "Problem set 3", timesort: now + 300000, courseid: 14, course: { id: 14, fullname: "Data Structures" }, action: { actionable: true } },
           { name: "Course starts", timesort: now + 400000, courseid: 14, course: { id: 14, fullname: "Data Structures" }, action: { actionable: false } },
           { name: "Course ends", timesort: now + 500000, courseid: 11, course: { id: 11, fullname: "Networking Basics" } },
-        ] });
+        ];
+        return send({ events: events.filter((e) => e.timesort >= from && e.timesort <= to) });
       }
       case "mod_assign_get_assignments": {
         const ids = Object.keys(q).filter((k) => k.startsWith("courseids[")).map((k) => q[k]);
@@ -124,6 +122,7 @@ beforeAll(async () => {
             { id: 1, name: "Lab 3", duedate: now + 5000 },
             { id: 2, name: "Lab 2", duedate: now - 5000 },
             { id: 3, name: "Lab 1", duedate: now - 9000 },
+            { id: 8, name: "Reading notes", duedate: 0 },
           ],
           "14": [
             { id: 4, name: "Essay 2", duedate: now - 2000 },
@@ -137,7 +136,7 @@ beforeAll(async () => {
         return send({ courses: [{ assignments: ids.flatMap((id) => byCourse[id] ?? []) }] });
       }
       case "mod_assign_get_submission_status":
-        if (q.assignid === "1" || q.assignid === "4") return send({ lastattempt: { submission: { status: "new" } } });
+        if (q.assignid === "1" || q.assignid === "4" || q.assignid === "8") return send({ lastattempt: { submission: { status: "new" } } });
         if (q.assignid === "5") return send({ lastattempt: { submission: { status: "draft" } } });
         if (q.assignid === "6") {
           return send({ exception: "moodle_exception", errorcode: "invalidrecord", message: "Invalid record ID (record not found)" });
@@ -184,8 +183,8 @@ beforeAll(async () => {
         }
         const forums: Record<string, unknown>[] = [];
         for (const id of ids) {
-          if (id === "11") forums.push({ id: 5, type: "news", name: "Announcements" }, { id: 6, type: "general", name: "Chat" });
-          if (id === "14") forums.push({ id: 7, type: "news", name: "Course news" });
+          if (id === "11") forums.push({ id: 5, course: 11, type: "news", name: "Announcements" }, { id: 6, course: 11, type: "general", name: "Chat" });
+          if (id === "14") forums.push({ id: 7, course: 14, type: "news", name: "Course news" });
         }
         return send(forums);
       }
@@ -228,13 +227,13 @@ async function call(client: Client, name: string, args: Record<string, unknown> 
 describe("moodle-student-mcp", () => {
   it("exposes only read-only tools", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(10);
+    expect(tools.length).toBe(11);
     for (const t of tools) expect(t.annotations?.readOnlyHint).toBe(true);
   });
 
   it("describes every tool with the question it answers, its inputs and a sample prompt", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(10);
+    expect(tools.length).toBe(11);
     for (const t of tools) {
       expect(t.description, t.name).toMatch(/^Answers '/);
       expect(t.description, t.name).toMatch(/Ask: '/);
@@ -302,6 +301,57 @@ describe("moodle-student-mcp", () => {
     const up = (await call(c, "get_upcoming_due_dates", { course_ids: ["11"] })).text;
     expect(up).toContain("Quiz 1 closes");
     expect(up).not.toContain("Problem set 3");
+  });
+
+  it("puts overdue work, work due soon, work with no due date and announcements in one digest", async () => {
+    const { text, isError } = await call(await connect(), "get_todo");
+    expect(isError).toBe(false);
+    expect(text).toContain("Overdue:");
+    expect(text).toMatch(/Essay 2 \(Data Structures\) was due .* not submitted/);
+    expect(text).toContain("Due soon:");
+    expect(text).toMatch(/Reading list \(Data Structures\) is due .* draft, not submitted/);
+    expect(text).toContain("No due date:");
+    expect(text).toMatch(/Reading notes \(Networking Basics\) has no due date, not submitted/);
+    expect(text).toContain("New announcements:");
+    expect(text).toContain("Welcome (Networking Basics,");
+    expect(text).toContain("Lab due Friday (Data Structures,");
+  });
+
+  it("shows work due soon in date order in the digest", async () => {
+    const { text } = await call(await connect(), "get_todo", { course_ids: [11] });
+    expect(text.indexOf("Lab 3")).toBeLessThan(text.indexOf("Quiz 1 closes"));
+  });
+
+  it("limits the digest to the courses asked for", async () => {
+    const { text } = await call(await connect(), "get_todo", { course_ids: [11] });
+    expect(text).toContain("Lab 3");
+    expect(text).toContain("Reading notes");
+    expect(text).not.toContain("Data Structures");
+    expect(text).toContain("Welcome");
+    expect(text).not.toContain("Lab due Friday");
+  });
+
+  it("honours the digest windows", async () => {
+    const c = await connect();
+    const near = (await call(c, "get_todo", { course_ids: [11], days_ahead: 1 })).text;
+    expect(near).toContain("Lab 3");
+    expect(near).not.toContain("Quiz 1 closes");
+    const noPast = (await call(c, "get_todo", { course_ids: [14], overdue_days: 0 })).text;
+    expect(noPast).not.toContain("Overdue:");
+    expect(noPast).not.toContain("Essay 2");
+    expect(noPast).toContain("Reading list");
+  });
+
+  it("says when there is nothing to do", async () => {
+    const { text } = await call(await connect(), "get_todo", { course_ids: [99] });
+    expect(text).toBe("Nothing to do right now.");
+  });
+
+  it("keeps the digest when one course will not open", async () => {
+    const { text, isError } = await call(await connect(), "get_todo", { course_ids: [11, 12] });
+    expect(isError).toBe(false);
+    expect(text).toContain("Lab 3");
+    expect(text).toContain("Could not read course 12");
   });
 
   it("asks for more events when a filter will drop some of them", async () => {

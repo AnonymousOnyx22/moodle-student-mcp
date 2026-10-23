@@ -77,7 +77,7 @@ const readmeTools = parseReadmeTools(readme);
 /** A property is required when an object missing only that property fails to parse. */
 function isRequired(tool: (typeof tools)[number], key: string): boolean {
   const shape: Record<string, z.ZodTypeAny> = {};
-  for (const k of Object.keys(tool.inputSchema)) shape[k] = k === key ? tool.inputSchema[k] : z.any();
+  for (const k of Object.keys(tool.inputSchema)) shape[k] = k === key ? tool.inputSchema[k] : z.any().optional();
   return !z.object(shape).safeParse({}).success;
 }
 

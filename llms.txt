@@ -27,6 +27,11 @@ Lists past due items from the last 45 days that still need action, with the cour
 Parameters: course_ids (optional, array of course IDs from get_my_courses to limit the list, string or number items; leave it out to cover all current courses).
 Example call: `{"name":"get_overdue","arguments":{"course_ids":[11]}}`
 
+### get_todo
+One digest for what to do next across your courses: overdue work, work due soon, assignments with no due date, and the latest announcement subjects, each with the course name and due date. Submission status comes from the assignment list and the calendar adds quizzes and other activities. Announcements are the latest subjects from the last 7 days.
+Parameters: course_ids (optional, array of course IDs from get_my_courses to limit the digest, string or number items; leave it out to cover all current courses), days_ahead (optional, how many days ahead to look, default 14), overdue_days (optional, how many days back to include overdue work, default 14).
+Example call: `{"name":"get_todo","arguments":{"course_ids":[11],"days_ahead":14,"overdue_days":14}}`
+
 ### get_assignments
 Lists up to 25 assignments for one course with due dates and submission status: not submitted, draft, submitted or graded.
 Parameters: course_id (required, Moodle course ID from get_my_courses, string or number).

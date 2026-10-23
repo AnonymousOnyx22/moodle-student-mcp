@@ -77,6 +77,28 @@ Restart the app if it was already running, then ask:
 Here is a whole exchange from start to finish. The lines under "The server answers" are the exact text the tools send back, copied from a run of this code against the test Moodle site that ships with the tests. The courses, dates and announcements are made up sample data, and the times are UTC. Copy the block into any chat app to see what an answer looks like before you install anything.
 
 ```text
+You: What should I do today?
+
+Tool call: get_todo
+{"name":"get_todo","arguments":{}}
+
+The server answers:
+Overdue:
+- Problem set 1 (Data Structures) was due Mon, Oct 19, 11:59 p.m. UTC, not submitted
+
+Due soon:
+- Quiz 1 closes (Networking Basics) is due Fri, Oct 23, 11:59 p.m. UTC
+- Lab 3: routing table (Networking Basics) is due Wed, Oct 28, 11:59 p.m. UTC, not submitted
+- Lab 4: report draft (Networking Basics) is due Mon, Nov 2, 11:59 p.m. UTC, draft, not submitted
+- Problem set 3 (Data Structures) is due Mon, Nov 2, 11:59 p.m. UTC
+
+New announcements:
+- Lab 3 is due Friday (Networking Basics, Wed, Oct 21, 9:15 a.m. UTC)
+- Week 6 reading (Networking Basics, Tue, Oct 20, 2:05 p.m. UTC)
+- Room change for Thursday (Data Structures, Mon, Oct 19, 4:40 p.m. UTC)
+
+The app replies: Start with Problem set 1 in Data Structures, which was due Monday. Quiz 1 closes Friday, the Lab 3 routing table is due Wednesday, and the Lab 4 report draft and Problem set 3 are due Nov 2. The latest announcements mention the Lab 3 deadline, the Week 6 reading and a room change for Data Structures.
+
 You: What's due this week?
 
 Tool call: get_upcoming_due_dates
@@ -113,9 +135,9 @@ Tool call: get_overdue
 {"name":"get_overdue","arguments":{}}
 
 The server answers:
-- Lab 2 report (Networking Basics) was due Fri, Oct 16, 11:59 p.m. UTC
+- Problem set 1 (Data Structures) was due Mon, Oct 19, 11:59 p.m. UTC
 
-The app replies: One thing is overdue: the Lab 2 report in Networking Basics, which was due on Friday, Oct 16.
+The app replies: One thing is overdue: Problem set 1 in Data Structures, which was due on Monday, Oct 19.
 
 You: Which assignments have I not submitted in Networking Basics?
 
@@ -207,6 +229,7 @@ To check your setup first, run `npx moodle-student-mcp doctor` with the two envi
 - "What's due this week?"
 - "What's due in Networking Basics?"
 - "What's due in the next two weeks?"
+- "What should I do today?"
 - "Is anything overdue?"
 - "Anything overdue in Networking Basics?"
 - "What work am I still missing?"
@@ -223,6 +246,7 @@ All tools are read only.
 | `get_my_courses` | Your current courses and their IDs |
 | `get_upcoming_due_dates` | Items that still need action and are due in the next 60 days, soonest first. Plain course events such as 'Course starts' are left out. Takes an optional `course_ids` list of course IDs |
 | `get_overdue` | Past due items that still need action. Takes an optional `course_ids` list of course IDs |
+| `get_todo` | One digest for what to do next: overdue work, work due soon, assignments with no due date and the latest announcement subjects, each with the course name and due date. Takes an optional `course_ids` list, plus `days_ahead` and `overdue_days` to set the window |
 | `get_assignments` | Assignments for a course with due dates and submission status. Takes a `course_id` from `get_my_courses` |
 | `get_missing_work` | Assignments you have not handed in yet, drafts included, with the course name and the due date. Takes an optional `course_ids` list of course IDs |
 | `get_my_grades` | Current grade for each course |

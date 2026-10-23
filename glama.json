@@ -40,6 +40,31 @@
       "example": { "name": "get_overdue", "arguments": { "course_ids": [11] } }
     },
     {
+      "name": "get_todo",
+      "description": "One digest for what to do next across your courses: overdue work, work due soon, assignments with no due date, and the latest announcement subjects, each with the course name and due date. Submission status comes from the assignment list and the calendar adds quizzes and other activities.",
+      "parameters": [
+        {
+          "name": "course_ids",
+          "type": "array of string | number",
+          "required": false,
+          "description": "Course IDs from get_my_courses to limit the digest. Leave out to cover all current courses."
+        },
+        {
+          "name": "days_ahead",
+          "type": "number",
+          "required": false,
+          "description": "How many days ahead to look. Default 14."
+        },
+        {
+          "name": "overdue_days",
+          "type": "number",
+          "required": false,
+          "description": "How many days back to include overdue work. Default 14."
+        }
+      ],
+      "example": { "name": "get_todo", "arguments": { "course_ids": [11] } }
+    },
+    {
       "name": "get_assignments",
       "description": "Lists up to 25 assignments for one course with due dates and submission status: not submitted, draft, submitted or graded.",
       "parameters": [

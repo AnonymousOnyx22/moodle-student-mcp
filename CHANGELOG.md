@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- New tool get_todo answers "what should I do today?" in one call. It brings together work that is overdue, work that is due soon, assignments with no due date and the latest announcement subjects, each with the course name and due date. It takes the same optional course_ids filter as the other tools, plus days_ahead and overdue_days to set the window.
+
 ## 0.1.4
 
 - get_file now tells you when a file is a PDF or another kind of file it cannot read as text. It shows the file name, a link with your key removed and a note to open it in Moodle, instead of a long block of garbled characters.

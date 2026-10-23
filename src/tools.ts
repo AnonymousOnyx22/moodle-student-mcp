@@ -13,6 +13,14 @@ const MAX_ITEMS = 50;
 const MAX_COURSE_ASSIGNMENTS = 25;
 /** Events asked for when a course filter will drop some of them. */
 const FILTERED_EVENTS = 200;
+/** Default days ahead for the get_todo digest. */
+const TODO_DAYS_AHEAD = 14;
+/** Default days back for overdue work in the get_todo digest. */
+const TODO_OVERDUE_DAYS = 14;
+/** How many announcement subjects the get_todo digest shows. */
+const TODO_ANNOUNCEMENTS = 5;
+/** How many days back the get_todo digest looks for announcements. */
+const TODO_ANNOUNCEMENT_DAYS = 7;
 
 /** The file name Moodle sent, or the last part of the link when it sent none. */
 function fileName(file: any): string {
@@ -135,6 +143,184 @@ async function calendarEvents(api: Api, from: number, to: number, courseIds?: (s
   return asked.length ? events.filter((e) => wanted.includes(eventCourseId(e))) : events;
 }
 
+/** A key that matches the same piece of work from the calendar and the assignment list. */
+function todoKey(courseid: number, name: unknown): string {
+  return `${courseid}:${String(name ?? "").trim().toLowerCase()}`;
+}
+
+interface Owed {
+  id: number;
+  name: string;
+  course: string;
+  courseid: number;
+  duedate: number;
+  state: string;
+}
+
+interface MissingWork {
+  owed: Owed[];
+  problems: string[];
+  unread: number;
+  ids: number[];
+  names: Map<number, string>;
+  /** Assignments whose submission status was read, so the digest can drop their calendar events. */
+  known: Set<number>;
+}
+
+/** The assignments in the courses that still need a submission, with the course and due date. */
+async function collectMissingWork(api: Api, courseIds?: (string | number)[]): Promise<MissingWork> {
+  const courses = await myCourses(api);
+  const names = new Map(courses.map((c) => [c.id, c.fullname]));
+  const asked: (string | number)[] = courseIds?.length ? courseIds : courses.map((c) => c.id);
+  const ids = [...new Set(asked.map((id) => Number(id)).filter((id) => Number.isFinite(id)))];
+  const owed: Owed[] = [];
+  const problems: string[] = [];
+  const known = new Set<number>();
+  let unread = 0;
+
+  if (!ids.length) return { owed, problems, unread, ids, names, known };
+
+  for (const id of ids) {
+    const label = names.get(id) ?? `course ${id}`;
+    let assignments: any[] = [];
+    try {
+      const r = await api.call<{ courses?: { assignments?: any[] }[] }>("mod_assign_get_assignments", { courseids: [id] });
+      assignments = r.courses?.[0]?.assignments ?? [];
+    } catch (err) {
+      if (isSiteWideError(err)) throw err;
+      problems.push(`Could not read ${label}: ${reasonText(err)}`);
+      continue;
+    }
+    const list = [...assignments]
+      .sort((a, b) => (a.duedate || 9e12) - (b.duedate || 9e12))
+      .slice(0, MAX_COURSE_ASSIGNMENTS);
+    for (const a of list) {
+      if (!a || a.requiresubmission === 0 || a.uservisible === 0) continue;
+      let state: string | undefined;
+      try {
+        state = submissionState(await api.call("mod_assign_get_submission_status", { assignid: a.id }));
+      } catch (err) {
+        if (isSiteWideError(err)) throw err;
+        unread++;
+        continue;
+      }
+      if (!state) {
+        unread++;
+        continue;
+      }
+      known.add(Number(a.id));
+      if (!isUnsubmitted(state)) continue;
+      owed.push({
+        id: Number(a.id),
+        name: a.name ?? `assignment ${a.id}`,
+        course: label,
+        courseid: id,
+        duedate: a.duedate ?? 0,
+        state,
+      });
+    }
+  }
+
+  return { owed, problems, unread, ids, names, known };
+}
+
+interface NewsPost {
+  course: string;
+  subject: string;
+  message: string;
+  modified: number;
+}
+
+interface NewsRead {
+  posts: NewsPost[];
+  leftOut: string[];
+  firstError?: unknown;
+  coursesRead: number;
+  newsForums: number;
+  forumsRead: number;
+}
+
+/**
+ * The latest posts in the news forums of the courses asked for. A course or forum
+ * the school server will not open is named in leftOut and the rest still shows.
+ */
+async function readNews(
+  api: Api,
+  ids: (string | number)[],
+  courseLabel: (id: string | number) => string,
+  postsPerForum = 5,
+  maxForums = 10,
+): Promise<NewsRead> {
+  const forums: any[] = [];
+  const seen = new Set<number>();
+  const forumCourse = new Map<number, string | number>();
+  const leftOut: string[] = [];
+  let firstError: unknown;
+
+  const addForums = (list: any[], onlyCourse?: string | number) => {
+    for (const f of list ?? []) {
+      if (!f) continue;
+      if (f.id !== undefined) {
+        if (seen.has(f.id)) continue;
+        seen.add(f.id);
+      }
+      const cid = onlyCourse ?? f.course;
+      if (f.id !== undefined && cid !== undefined) forumCourse.set(f.id, cid);
+      forums.push(f);
+    }
+  };
+
+  let coursesRead = 0;
+  try {
+    addForums(await api.call<any[]>("mod_forum_get_forums_by_courses", { courseids: ids }));
+    coursesRead = ids.length;
+  } catch (err) {
+    if (isSiteWideError(err)) throw err;
+    // One course can break the call for all of them, so ask for each course on its own.
+    for (const id of ids) {
+      try {
+        addForums(await api.call<any[]>("mod_forum_get_forums_by_courses", { courseids: [id] }), id);
+        coursesRead++;
+      } catch (courseErr) {
+        if (isSiteWideError(courseErr)) throw courseErr;
+        firstError ??= courseErr;
+        leftOut.push(`Could not read ${courseLabel(id)}: ${reasonText(courseErr)}`);
+      }
+    }
+  }
+
+  const news = forums.filter((f) => f.type === "news").slice(0, maxForums);
+  const posts: NewsPost[] = [];
+  let forumsRead = 0;
+  for (const f of news) {
+    let discussions: any[] = [];
+    try {
+      const r = await api.call<{ discussions?: any[] }>("mod_forum_get_forum_discussions", {
+        forumid: f.id,
+        perpage: postsPerForum,
+      });
+      discussions = r.discussions ?? [];
+    } catch (err) {
+      if (isSiteWideError(err)) throw err;
+      firstError ??= err;
+      leftOut.push(`Could not read the ${f.name ?? `forum ${f.id}`} forum: ${reasonText(err)}`);
+      continue;
+    }
+    forumsRead++;
+    for (const d of discussions) {
+      const cid = forumCourse.get(f.id) ?? f.course;
+      posts.push({
+        course: cid !== undefined ? courseLabel(cid) : "course",
+        subject: String(d.subject ?? d.name ?? "Announcement"),
+        message: String(d.message ?? ""),
+        modified: Number(d.timemodified) || 0,
+      });
+    }
+  }
+
+  return { posts, leftOut, firstError, coursesRead, newsForums: news.length, forumsRead };
+}
+
 export const tools: ToolDef<Api>[] = [
   {
     name: "get_my_courses",
@@ -183,6 +369,110 @@ export const tools: ToolDef<Api>[] = [
     },
   },
   {
+    name: "get_todo",
+    title: "What to do next",
+    description:
+      "Answers 'what should I do today?' One digest across your courses: overdue work, work due soon, assignments with no due date, and the latest announcement subjects, each with the course name and due date. Submission status comes from the assignment list and the calendar adds quizzes and other activities. Input: course_ids, an optional array of course IDs to limit the digest; days_ahead, how many days ahead to look, default 14; overdue_days, how many days back to look for overdue work, default 14. Ask: 'What should I do today?'",
+    inputSchema: {
+      course_ids: z.array(courseId).optional(),
+      days_ahead: z.number().int().min(1).max(60).optional().describe("How many days ahead to look. Default 14."),
+      overdue_days: z.number().int().min(0).max(30).optional().describe("How many days back to include overdue work. Default 14."),
+    },
+    run: async ({ course_ids, days_ahead, overdue_days }, api) => {
+      const now = Math.floor(Date.now() / 1000);
+      const ahead = days_ahead ?? TODO_DAYS_AHEAD;
+      const back = overdue_days ?? TODO_OVERDUE_DAYS;
+      const work = await collectMissingWork(api, course_ids);
+      if (!work.ids.length) return "No current courses found.";
+
+      let events: any[] = [];
+      let calendarProblem: string | undefined;
+      try {
+        events = await calendarEvents(api, now - back * DAY, now + ahead * DAY, course_ids);
+      } catch (err) {
+        if (isSiteWideError(err)) throw err;
+        calendarProblem = `Could not read the calendar: ${reasonText(err)}`;
+      }
+
+      // The assignment list already covers each assignment it knows, so only add
+      // calendar events for other work or for assignments whose status was unread.
+      const owed = new Set(work.owed.map((o) => todoKey(o.courseid, o.name)));
+      const extra = events.filter(
+        (e) =>
+          e.action?.actionable &&
+          !(e.modulename === "assign" && work.known.has(Number(e.instance))) &&
+          !owed.has(todoKey(eventCourseId(e), e.name)),
+      );
+
+      const overdue = [
+        ...work.owed
+          .filter((o) => o.duedate > 0 && o.duedate < now && o.duedate >= now - back * DAY)
+          .map((o) => ({
+            at: o.duedate,
+            text: `${o.name} (${o.course}) ${dueText(o.duedate, now)}, ${unsubmittedText(o.state)}`,
+          })),
+        ...extra
+          .filter((e) => e.timesort < now)
+          .map((e) => ({
+            at: Number(e.timesort),
+            text: `${e.name} (${e.course?.fullname ?? "course"}) was due ${fmtUnix(e.timesort)}`,
+          })),
+      ].sort((a, b) => a.at - b.at);
+
+      const soon = [
+        ...work.owed
+          .filter((o) => o.duedate >= now && o.duedate <= now + ahead * DAY)
+          .map((o) => ({
+            at: o.duedate,
+            text: `${o.name} (${o.course}) ${dueText(o.duedate, now)}, ${unsubmittedText(o.state)}`,
+          })),
+        ...extra
+          .filter((e) => e.timesort >= now)
+          .map((e) => ({
+            at: Number(e.timesort),
+            text: `${e.name} (${e.course?.fullname ?? "course"}) is due ${fmtUnix(e.timesort)}`,
+          })),
+      ].sort((a, b) => a.at - b.at);
+
+      const noDate = work.owed
+        .filter((o) => !o.duedate)
+        .map((o) => `${o.name} (${o.course}) has no due date, ${unsubmittedText(o.state)}`);
+
+      let news: NewsPost[] = [];
+      const newsNotes: string[] = [];
+      try {
+        const read = await readNews(api, work.ids, (id) => work.names.get(Number(id)) ?? `course ${id}`);
+        news = read.posts
+          .filter((p) => p.modified >= now - TODO_ANNOUNCEMENT_DAYS * DAY)
+          .sort((a, b) => b.modified - a.modified)
+          .slice(0, TODO_ANNOUNCEMENTS);
+        newsNotes.push(...read.leftOut);
+      } catch (err) {
+        newsNotes.push(`Could not read announcements: ${reasonText(err)}`);
+      }
+
+      const sections: string[] = [];
+      if (overdue.length) sections.push(`Overdue:\n${bullets(overdue.map((i) => i.text))}`);
+      if (soon.length) sections.push(`Due soon:\n${bullets(soon.map((i) => i.text))}`);
+      if (noDate.length) sections.push(`No due date:\n${bullets(noDate)}`);
+      if (news.length) {
+        sections.push(
+          `New announcements:\n${bullets(news.map((p) => `${p.subject} (${p.course}, ${fmtUnix(p.modified)})`))}`,
+        );
+      }
+
+      const notes = [...work.problems];
+      if (work.unread) {
+        notes.push(`Could not read the submission status of ${work.unread} assignment${work.unread === 1 ? "" : "s"}.`);
+      }
+      if (calendarProblem) notes.push(calendarProblem);
+      notes.push(...newsNotes);
+
+      const body = sections.length ? sections.join("\n\n") : "Nothing to do right now.";
+      return notes.length ? `${body}\n\n${bullets(notes)}` : body;
+    },
+  },
+  {
     name: "get_assignments",
     title: "Course assignments",
     description:
@@ -212,50 +502,10 @@ export const tools: ToolDef<Api>[] = [
       "Answers 'what do I still owe?' Lists the assignments in your courses that you have not handed in yet, with the course name and the due date. Drafts that were never handed in are included, and work that was already handed in or graded is left out. Up to 25 assignments in each course are checked and the list holds up to 50 items. Input: course_ids, an optional array of course IDs to limit the list; leave it out to cover all current courses. Ask: 'What work am I still missing?'",
     inputSchema: { course_ids: z.array(courseId).optional() },
     run: async ({ course_ids }, api) => {
-      const courses = await myCourses(api);
-      const names = new Map(courses.map((c) => [c.id, c.fullname]));
-      const asked: (string | number)[] = course_ids?.length ? course_ids : courses.map((c) => c.id);
-      const ids = [...new Set(asked.map((id) => Number(id)).filter((id) => Number.isFinite(id)))];
+      const { owed, problems, unread, ids } = await collectMissingWork(api, course_ids);
       if (!ids.length) return "No current courses found.";
 
       const now = Math.floor(Date.now() / 1000);
-      const owed: { name: string; course: string; duedate: number; state: string }[] = [];
-      const problems: string[] = [];
-      let unread = 0;
-
-      for (const id of ids) {
-        const label = names.get(id) ?? `course ${id}`;
-        let assignments: any[] = [];
-        try {
-          const r = await api.call<{ courses?: { assignments?: any[] }[] }>("mod_assign_get_assignments", { courseids: [id] });
-          assignments = r.courses?.[0]?.assignments ?? [];
-        } catch (err) {
-          if (isSiteWideError(err)) throw err;
-          problems.push(`Could not read ${label}: ${reasonText(err)}`);
-          continue;
-        }
-        const list = [...assignments]
-          .sort((a, b) => (a.duedate || 9e12) - (b.duedate || 9e12))
-          .slice(0, MAX_COURSE_ASSIGNMENTS);
-        for (const a of list) {
-          if (!a || a.requiresubmission === 0 || a.uservisible === 0) continue;
-          let state: string | undefined;
-          try {
-            state = submissionState(await api.call("mod_assign_get_submission_status", { assignid: a.id }));
-          } catch (err) {
-            if (isSiteWideError(err)) throw err;
-            unread++;
-            continue;
-          }
-          if (!state) {
-            unread++;
-            continue;
-          }
-          if (!isUnsubmitted(state)) continue;
-          owed.push({ name: a.name ?? `assignment ${a.id}`, course: label, duedate: a.duedate ?? 0, state });
-        }
-      }
-
       const lines = owed
         .sort((a, b) => (a.duedate || 9e12) - (b.duedate || 9e12))
         .slice(0, MAX_ITEMS)
@@ -342,68 +592,18 @@ export const tools: ToolDef<Api>[] = [
       if (!ids.length) return "No current courses found.";
       const courseLabel = (id: string | number) => courses.find((c) => c.id === Number(id))?.fullname ?? `course ${id}`;
 
-      const forums: any[] = [];
-      const seen = new Set<number>();
-      const leftOut: string[] = [];
-      let firstError: unknown;
-
-      const addForums = (list: any[]) => {
-        for (const f of list ?? []) {
-          if (!f) continue;
-          if (f.id !== undefined) {
-            if (seen.has(f.id)) continue;
-            seen.add(f.id);
-          }
-          forums.push(f);
-        }
-      };
-
-      let coursesRead = 0;
-      try {
-        addForums(await api.call<any[]>("mod_forum_get_forums_by_courses", { courseids: ids }));
-        coursesRead = ids.length;
-      } catch (err) {
-        if (isSiteWideError(err)) throw err;
-        // One course can break the call for all of them, so ask for each course on its own.
-        for (const id of ids) {
-          try {
-            addForums(await api.call<any[]>("mod_forum_get_forums_by_courses", { courseids: [id] }));
-            coursesRead++;
-          } catch (courseErr) {
-            if (isSiteWideError(courseErr)) throw courseErr;
-            firstError ??= courseErr;
-            leftOut.push(`Could not read ${courseLabel(id)}: ${reasonText(courseErr)}`);
-          }
-        }
-      }
-
-      const news = forums.filter((f) => f.type === "news").slice(0, 10);
-      const lines: string[] = [];
-      let forumsRead = 0;
-      for (const f of news) {
-        let discussions: any[] = [];
-        try {
-          const r = await api.call<{ discussions?: any[] }>("mod_forum_get_forum_discussions", { forumid: f.id, perpage: 5 });
-          discussions = r.discussions ?? [];
-        } catch (err) {
-          if (isSiteWideError(err)) throw err;
-          firstError ??= err;
-          leftOut.push(`Could not read the ${f.name ?? `forum ${f.id}`} forum: ${reasonText(err)}`);
-          continue;
-        }
-        forumsRead++;
-        for (const d of discussions) {
-          lines.push(`${d.subject ?? d.name} (${fmtUnix(d.timemodified)})\n  ${stripHtml(d.message, 400).replace(/\n/g, " ")}`);
-        }
-      }
+      const news = await readNews(api, ids, courseLabel);
+      const lines = news.posts.map(
+        (p) => `${p.subject} (${fmtUnix(p.modified)})\n  ${stripHtml(p.message, 400).replace(/\n/g, " ")}`,
+      );
 
       // Nothing at all came back, so the first problem is the answer.
-      if (!lines.length && firstError && (coursesRead === 0 || (news.length > 0 && forumsRead === 0))) {
-        throw firstError;
+      if (!lines.length && news.firstError && (news.coursesRead === 0 || (news.newsForums > 0 && news.forumsRead === 0))) {
+        throw news.firstError;
       }
 
       const body = bullets(lines, "No recent announcements.");
-      return leftOut.length ? `${body}\n${bullets(leftOut)}` : body;
+      return news.leftOut.length ? `${body}\n${bullets(news.leftOut)}` : body;
     },
   },
   {

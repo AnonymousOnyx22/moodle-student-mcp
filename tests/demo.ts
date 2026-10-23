@@ -16,9 +16,9 @@ function ts(iso: string): number {
 }
 
 const EVENTS = [
-  { name: "Quiz 1 closes", timesort: ts("2026-10-23T23:59:00Z"), courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: true } },
-  { name: "Lab 4 report", timesort: ts("2026-10-28T23:59:00Z"), courseid: 11, course: { id: 11, fullname: "Networking Basics" }, action: { actionable: true } },
-  { name: "Problem set 3", timesort: ts("2026-11-02T23:59:00Z"), courseid: 12, course: { id: 12, fullname: "Data Structures" }, action: { actionable: true } },
+  { name: "Quiz 1 closes", timesort: ts("2026-10-23T23:59:00Z"), courseid: 11, course: { id: 11, fullname: "Networking Basics" }, modulename: "quiz", instance: 21, action: { actionable: true } },
+  { name: "Lab 4 report", timesort: ts("2026-10-28T23:59:00Z"), courseid: 11, course: { id: 11, fullname: "Networking Basics" }, modulename: "assign", instance: 4, action: { actionable: true } },
+  { name: "Problem set 3", timesort: ts("2026-11-02T23:59:00Z"), courseid: 12, course: { id: 12, fullname: "Data Structures" }, modulename: "assign", instance: 99, action: { actionable: true } },
   {
     name: "Course starts",
     timesort: ts("2026-10-26T08:00:00Z"),
@@ -33,17 +33,30 @@ const EVENTS = [
     course: { id: 11, fullname: "Networking Basics" },
   },
   {
+    name: "Problem set 1",
+    timesort: ts("2026-10-19T23:59:00Z"),
+    courseid: 12,
+    course: { id: 12, fullname: "Data Structures" },
+    modulename: "assign",
+    instance: 5,
+    action: { actionable: true },
+  },
+  {
     name: "Lab 2 report",
     timesort: ts("2026-10-16T23:59:00Z"),
     courseid: 11,
     course: { id: 11, fullname: "Networking Basics" },
-    action: { actionable: true },
+    modulename: "assign",
+    instance: 2,
+    action: { actionable: false },
   },
   {
     name: "Reading quiz",
     timesort: ts("2026-10-19T17:00:00Z"),
     courseid: 12,
     course: { id: 12, fullname: "Data Structures" },
+    modulename: "quiz",
+    instance: 31,
     action: { actionable: false },
   },
 ];
@@ -96,11 +109,10 @@ function handler(req: http.IncomingMessage, res: http.ServerResponse): void {
         { id: 12, fullname: "Data Structures" },
       ]);
     case "core_calendar_get_action_events_by_timeframe": {
-      // The tool asks for a 60 day window for what is coming and a 45 day window
-      // for what is late. The window length tells the two apart.
-      const span = Number(q.timesortto) - Number(q.timesortfrom);
-      const coming = span > 50 * 86400;
-      const events = EVENTS.filter((e) => (coming ? e.timesort > NOW : e.timesort <= NOW)).sort(
+      // The tool asks for a window of its own, so keep the events inside it.
+      const from = Number(q.timesortfrom);
+      const to = Number(q.timesortto);
+      const events = EVENTS.filter((e) => e.timesort >= from && e.timesort <= to).sort(
         (a, b) => a.timesort - b.timesort,
       );
       return send({ events });
@@ -139,8 +151,8 @@ function handler(req: http.IncomingMessage, res: http.ServerResponse): void {
         .map((k) => q[k]);
       const forums: Record<string, unknown>[] = [];
       for (const id of ids) {
-        if (id === "11") forums.push({ id: 5, type: "news", name: "Announcements" });
-        if (id === "12") forums.push({ id: 7, type: "news", name: "Course news" });
+        if (id === "11") forums.push({ id: 5, course: 11, type: "news", name: "Announcements" });
+        if (id === "12") forums.push({ id: 7, course: 12, type: "news", name: "Course news" });
       }
       return send(forums);
     }
@@ -195,6 +207,12 @@ function courseIdFrom(answer: string): number {
 
 const TURNS: Turn[] = [
   {
+    question: "What should I do today?",
+    steps: [{ tool: "get_todo", args: () => ({}) }],
+    reply:
+      "Start with Problem set 1 in Data Structures, which was due Monday. Quiz 1 closes Friday, the Lab 3 routing table is due Wednesday, and the Lab 4 report draft and Problem set 3 are due Nov 2. The latest announcements mention the Lab 3 deadline, the Week 6 reading and a room change for Data Structures.",
+  },
+  {
     question: "What's due this week?",
     steps: [{ tool: "get_upcoming_due_dates", args: () => ({}) }],
     reply:
@@ -211,7 +229,7 @@ const TURNS: Turn[] = [
   {
     question: "Is anything overdue?",
     steps: [{ tool: "get_overdue", args: () => ({}) }],
-    reply: "One thing is overdue: the Lab 2 report in Networking Basics, which was due on Friday, Oct 16.",
+    reply: "One thing is overdue: Problem set 1 in Data Structures, which was due on Monday, Oct 19.",
   },
   {
     question: "Which assignments have I not submitted in Networking Basics?",
