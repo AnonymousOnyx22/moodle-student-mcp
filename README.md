@@ -4,7 +4,7 @@ Add the server to your AI app with npx. Put your school's Moodle address and you
 
 Ask your AI what's actually left to do in Moodle with the Moodle MCP server.
 
-This is a free, open source [Moodle MCP](https://modelcontextprotocol.io) server. It lets Claude, ChatGPT, Cursor and other AI apps read your Moodle courses, due dates, grades and announcements. It is **read only**. It can never submit, edit or delete anything.
+This is a free, open source [Moodle MCP](https://modelcontextprotocol.io) server. It lets Claude Desktop, Claude Code, Cursor, VS Code and other AI apps that run a local MCP server read your Moodle courses, due dates, grades and announcements. It is **read only**. It can never submit, edit or delete anything.
 
 Works with Moodle sites that have the mobile web service turned on. Not affiliated with Moodle Pty Ltd.
 
