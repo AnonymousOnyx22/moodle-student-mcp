@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- get_file now extracts readable text from PDFs when possible. PDFs with no extractable text still show the file name, link with your key removed and a note to open it in Moodle.
+
 ## 0.1.5
 
 - get_announcements now puts the course name on each line next to the date, so announcements from different courses are easy to tell apart.

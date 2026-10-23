@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { MoodleApi } from "./moodle.js";
 import { type ToolDef, bullets, fmtUnix, stripHtml } from "./core/tools.js";
 import { ApiError, describeStatus, isSiteWideError, sameOrigin, statusSetupKey } from "./core/http.js";
+import { extractPdfText } from "./core/pdf.js";
 
 type Api = MoodleApi;
 
@@ -610,7 +611,7 @@ export const tools: ToolDef<Api>[] = [
     name: "get_file",
     title: "Course file",
     description:
-      "Answers 'what does this course file say?' Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url. Plain text and HTML files come back as readable text. A PDF or another file that is not text comes back with its file name, a link with your key removed and a note to open it in Moodle. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server. Input: file_url, the link from get_course_content. Ask: 'Read the Week 3 slides PDF.'",
+      "Answers 'what does this course file say?' Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url. Plain text and HTML files come back as readable text. A PDF with readable text comes back as text, and a PDF with no extractable text comes back with its file name, a link with your key removed and a note to open it in Moodle. Another file that is not text comes back with its file name, a link with your key removed and a note to open it in Moodle. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server. Input: file_url, the link from get_course_content. Ask: 'Read the Week 3 slides PDF.'",
     inputSchema: { file_url: z.string().describe("URL of the course file to download. Use the link from get_course_content.") },
     run: async ({ file_url }, api) => {
       let url = String(file_url).trim();
@@ -636,7 +637,13 @@ export const tools: ToolDef<Api>[] = [
       const link = fileLink({ fileurl: u.toString() });
       // A PDF header can sit a little way into the file, so look at the start.
       const head = new TextDecoder("latin1").decode(buf.slice(0, 1024));
-      if (head.includes("%PDF")) {
+      const isPdf = head.includes("%PDF") || (res.headers.get("content-type") ?? "").toLowerCase().includes("pdf");
+      if (isPdf) {
+        const extracted = extractPdfText(buf);
+        if (extracted && extracted.trim()) {
+          const text = extracted.trim();
+          return text.length > 20000 ? text.slice(0, 20000) + "\n[truncated]" : text;
+        }
         return `File: ${name}\nLink: ${link}\nThis is a PDF, so it cannot be read as text. Open it in Moodle to read it.`;
       }
       const type = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
