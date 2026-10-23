@@ -252,7 +252,7 @@ All tools are read only.
 | `get_my_grades` | Current grade for each course |
 | `get_course_grade_items` | Every graded item in a course with mark and percentage. Takes a `course_id` from `get_my_courses` |
 | `get_course_content` | Sections and activities for a course, with file names and links that leave your key out. Takes a `course_id` from `get_my_courses` |
-| `get_file` | Download a course file from your school's Moodle site and return its text. A PDF or another file that is not text comes back with its file name, a link and a note to open it in Moodle. Takes a `file_url` from `get_course_content` |
+| `get_file` | Download a course file from your school's Moodle site and return its text. Plain text, HTML and PDF files with readable text come back as text. A PDF with no extractable text comes back with its file name, a link with your key removed and a note to open it in Moodle. Any other file type comes back with its file name, a link with your key removed and a note that only plain text, HTML and PDF are supported, with a note to open it in Moodle. Takes a `file_url` from `get_course_content` |
 | `get_announcements` | Recent announcements with the course name and date on each one, and any course Moodle will not open left out. Takes an optional `course_ids` list of course IDs |
 
 ## Privacy and security

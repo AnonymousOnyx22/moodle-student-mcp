@@ -124,7 +124,7 @@
     },
     {
       "name": "get_file",
-      "description": "Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url. Plain text and HTML files come back as readable text. A PDF or another file that is not text comes back with its file name, a link with your key removed and a note to open it in Moodle. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server.",
+      "description": "Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url. Plain text and HTML files come back as readable text. A PDF with readable text comes back as text, and a PDF with no extractable text comes back with its file name, a link with your key removed and a note to open it in Moodle. Any other file type is not supported and comes back with its file name, a link with your key removed and a note that only plain text, HTML and PDF are supported, with a note to open it in Moodle. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server.",
       "parameters": [
         {
           "name": "file_url",
