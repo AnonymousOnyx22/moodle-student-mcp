@@ -7,13 +7,13 @@
     "url": "https://github.com/AnonymousOnyx22/moodle-student-mcp",
     "source": "github"
   },
-  "version": "0.1.4",
+  "version": "0.1.5",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "moodle-student-mcp",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "runtimeHint": "npx",
       "runtimeArguments": [
         {

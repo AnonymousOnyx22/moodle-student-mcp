@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.5
 
 - New tool get_todo answers "what should I do today?" in one call. It brings together work that is overdue, work that is due soon, assignments with no due date and the latest announcement subjects, each with the course name and due date. It takes the same optional course_ids filter as the other tools, plus days_ahead and overdue_days to set the window.
 
