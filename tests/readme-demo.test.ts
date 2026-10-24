@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { demoTranscript } from "./demo.js";
 
@@ -24,6 +24,10 @@ function lines(text: string): string[] {
 }
 
 describe("the README demo transcript matches what the server answers", () => {
+  // the demo data is written for this moment, so the tools must see the same clock or due dates drift into the past
+  beforeAll(() => { vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-10-21T12:00:00Z") }); });
+  afterAll(() => { vi.useRealTimers(); });
+
   it("shows the same text the tools return", async () => {
     expect(lines(readmeBlock())).toEqual(lines(await demoTranscript()));
   });
