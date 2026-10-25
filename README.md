@@ -1,5 +1,10 @@
 # Moodle MCP for students
 
+[![npm](https://img.shields.io/npm/v/moodle-student-mcp.svg)](https://www.npmjs.com/package/moodle-student-mcp)
+[![downloads](https://img.shields.io/npm/dm/moodle-student-mcp.svg)](https://www.npmjs.com/package/moodle-student-mcp)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.AnonymousOnyx22%2Fmoodle--student--mcp-blue.svg)](https://registry.modelcontextprotocol.io/?search=io.github.AnonymousOnyx22%2Fmoodle-student-mcp)
+
 Add the server to your AI app with npx. Put your school's Moodle address and your key in the line for your app below, then run it.
 
 Ask your AI what's actually left to do in Moodle with the Moodle MCP server.
