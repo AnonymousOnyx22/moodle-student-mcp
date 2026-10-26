@@ -201,6 +201,9 @@ interface MissingWork {
   known: Set<number>;
 }
 
+/** How many submission status calls run at the same time. */
+const STATUS_BATCH = 4;
+
 /** The assignments in the courses that still need a submission, with the course and due date. */
 async function collectMissingWork(api: Api, courseIds?: (string | number)[]): Promise<MissingWork> {
   const courses = await myCourses(api);
@@ -228,16 +231,25 @@ async function collectMissingWork(api: Api, courseIds?: (string | number)[]): Pr
     const list = [...assignments]
       .sort((a, b) => (a.duedate || 9e12) - (b.duedate || 9e12))
       .slice(0, MAX_COURSE_ASSIGNMENTS);
-    for (const a of list) {
-      if (!a || a.requiresubmission === 0 || a.uservisible === 0) continue;
-      let state: string | undefined;
-      try {
-        state = submissionState(await api.call("mod_assign_get_submission_status", { assignid: a.id }));
-      } catch (err) {
-        if (isSiteWideError(err)) throw err;
-        unread++;
-        continue;
+    const wanted = list.filter((a) => a && a.requiresubmission !== 0 && a.uservisible !== 0);
+    const states: (string | undefined)[] = [];
+    for (let i = 0; i < wanted.length; i += STATUS_BATCH) {
+      const batch = await Promise.all(
+        wanted.slice(i, i + STATUS_BATCH).map(async (a) => {
+          try {
+            return { state: submissionState(await api.call("mod_assign_get_submission_status", { assignid: a.id })) };
+          } catch (err) {
+            return { err };
+          }
+        }),
+      );
+      for (const r of batch) {
+        if ("err" in r && isSiteWideError(r.err)) throw r.err;
+        states.push("state" in r ? r.state : undefined);
       }
+    }
+    for (const [i, a] of wanted.entries()) {
+      const state = states[i];
       if (!state) {
         unread++;
         continue;
