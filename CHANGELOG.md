@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.7
 
 - New tool get_course_page reads the text of the Page activities in a course, so pages listed in get_course_content can now be read.
 - get_course_content now shows the intro text of each activity, such as assignment instructions, label text and page summaries, with the HTML removed.
