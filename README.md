@@ -243,6 +243,9 @@ To check your setup first, run `npx moodle-student-mcp doctor` with the two envi
 - "What's my grade in each course, and what's in the gradebook for Networking?"
 - "Any new announcements?"
 - "Which assignments have I not submitted yet?"
+- "What's in each week of Networking Basics?"
+- "Read me the Week 1 page in Networking Basics."
+- "Open the slides PDF from week 2 and summarize it."
 
 ## Tools
 
