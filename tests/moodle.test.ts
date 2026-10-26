@@ -171,6 +171,12 @@ beforeAll(async () => {
           },
           { name: "Week 1 quiz", modname: "quiz", description: "<p>Covers chapters 1 and 2.</p>" },
         ] }]);
+      case "mod_page_get_pages_by_courses":
+        return send({ pages: [
+          { name: "Week 1 reading", visible: 1, content: "<h2>Packets</h2><p>A packet <b>travels</b> in hops.</p>" },
+          { name: "Hidden page", visible: 0, content: "<p>secret</p>" },
+          { name: "Long page", visible: 1, content: "<p>" + "x".repeat(25000) + "</p>" },
+        ] });
       case "mod_forum_get_forums_by_courses": {
         if (q.wstoken === "forumtoken") {
           return send({ exception: "moodle_exception", errorcode: "invalidtoken", message: "Invalid token - token not found" });
@@ -228,13 +234,13 @@ async function call(client: Client, name: string, args: Record<string, unknown> 
 describe("moodle-student-mcp", () => {
   it("exposes only read-only tools", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(11);
+    expect(tools.length).toBe(12);
     for (const t of tools) expect(t.annotations?.readOnlyHint).toBe(true);
   });
 
   it("describes every tool with the question it answers, its inputs and a sample prompt", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(11);
+    expect(tools.length).toBe(12);
     for (const t of tools) {
       expect(t.description, t.name).toMatch(/^Answers '/);
       expect(t.description, t.name).toMatch(/Ask: '/);
@@ -441,6 +447,20 @@ describe("moodle-student-mcp", () => {
     expect(ann).toContain("Welcome");
     expect(ann).toContain("Hello class");
     expect(ann).toContain("Welcome (Networking Basics,");
+  });
+
+  it("reads page activities and filters by title", async () => {
+    const c = await connect();
+    const all = (await call(c, "get_course_page", { course_id: 11 })).text;
+    expect(all).toContain("Week 1 reading\nPackets\nA packet travels in hops.");
+    expect(all).not.toContain("secret");
+    expect(all).not.toContain("<b>");
+    expect(all).toContain("[truncated]");
+    const one = (await call(c, "get_course_page", { course_id: 11, page_name: "week 1" })).text;
+    expect(one).toContain("A packet travels");
+    expect(one).not.toContain("xxxx");
+    const none = await call(c, "get_course_page", { course_id: 11, page_name: "nothing" });
+    expect(none.text).toContain("No page in this course");
   });
 
   it("shows the intro text of each activity in course content", async () => {

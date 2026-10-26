@@ -35,6 +35,10 @@ const DAY = 86400;
 const MAX_ITEMS = 50;
 /** The most intro text shown for one activity in get_course_content. */
 const MAX_INTRO = 600;
+/** The most text shown for one page in get_course_page. */
+const MAX_PAGE_TEXT = 20000;
+/** The most pages get_course_page shows at once. */
+const MAX_PAGES = 5;
 /** The most assignments looked at in one course. */
 const MAX_COURSE_ASSIGNMENTS = 25;
 /** Events asked for when a course filter will drop some of them. */
@@ -624,6 +628,34 @@ export const tools: ToolDef<Api>[] = [
           return `${s.name || "Section"}\n${mods.join("\n") || "  (empty)"}`;
         })
         .join("\n\n");
+    },
+  },
+  {
+    name: "get_course_page",
+    title: "Course page",
+    description:
+      "Answers 'what does this course page say?' Reads the Page activities of one course, the pages listed as page in get_course_content, and returns their text with the HTML removed. Up to 5 pages are shown, each up to 20000 characters, and a longer page ends with [truncated]. Images and embedded media are not shown. Input: course_id, the ID from get_my_courses, and page_name, an optional word or phrase from the page title to pick one page; leave it out to read the first pages of the course. Ask: 'Read the Week 2 reading page in Networking Basics.'",
+    inputSchema: {
+      course_id: courseId,
+      page_name: z.string().optional().describe("Part of the page title, as shown in get_course_content. Leave out to read the first pages."),
+    },
+    run: async ({ course_id, page_name }, api) => {
+      const r = await api.call<{ pages?: any[] }>("mod_page_get_pages_by_courses", { courseids: [course_id] });
+      let pages = (r?.pages ?? []).filter((p) => p?.visible !== 0 && p?.visible !== false);
+      if (!pages.length) return "This course has no pages.";
+      const wanted = String(page_name ?? "").trim().toLowerCase();
+      if (wanted) {
+        pages = pages.filter((p) => String(p.name ?? "").toLowerCase().includes(wanted));
+        if (!pages.length) return `No page in this course has "${page_name}" in its title. Use get_course_content to see the page titles.`;
+      }
+      const shown = pages.slice(0, MAX_PAGES).map((p) => {
+        const text = stripHtml(p.content, MAX_PAGE_TEXT + 1);
+        const body = text.length > MAX_PAGE_TEXT ? text.slice(0, MAX_PAGE_TEXT) + "\n[truncated]" : text;
+        return `${p.name || "Page"}\n${body || "(this page has no text)"}`;
+      });
+      const more = pages.length - shown.length;
+      const note = more > 0 ? `\n\n${more} more page${more === 1 ? "" : "s"} not shown. Use page_name to pick one.` : "";
+      return shown.join("\n\n") + note;
     },
   },
   {

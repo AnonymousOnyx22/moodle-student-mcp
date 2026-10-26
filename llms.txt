@@ -57,6 +57,11 @@ Lists the sections of one course, such as weeks or topics, with up to 40 activit
 Parameters: course_id (required, Moodle course ID from get_my_courses, string or number).
 Example call: `{"name":"get_course_content","arguments":{"course_id":11}}`
 
+### get_course_page
+Reads the Page activities of one course, the pages listed as page in get_course_content, and returns their text with the HTML removed. Up to 5 pages are shown, each up to 20000 characters. Images and embedded media are not shown.
+Parameters: course_id (required, Moodle course ID from get_my_courses, string or number), page_name (optional, part of the page title to pick one page; leave it out to read the first pages).
+Example call: `{"name":"get_course_page","arguments":{"course_id":11,"page_name":"Week 1"}}`
+
 ### get_file
 Downloads one course file resource, such as a PDF, slide deck or handout, from its file_url. Plain text and HTML files come back as readable text. A PDF with readable text comes back as text, and a PDF with no extractable text comes back with its file name, a link with your key removed and a note to open it in Moodle. Any other file type is not supported and comes back with its file name, a link with your key removed and a note that only plain text, HTML and PDF are supported, with a note to open it in Moodle. Only a link on your school's Moodle site is downloaded, so your key is never sent to another server. A link that points somewhere else is refused.
 Files over 25 MB are not downloaded; the answer gives their name and link instead.
