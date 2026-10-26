@@ -422,7 +422,7 @@ export const tools: ToolDef<Api>[] = [
     name: "get_todo",
     title: "What to do next",
     description:
-      "Answers 'what should I do today?' One digest across your courses: overdue work, work due soon, assignments with no due date, and the latest announcement subjects, each with the course name and due date. Submission status comes from the assignment list and the calendar adds quizzes and other activities. Input: course_ids, an optional array of course IDs to limit the digest; days_ahead, how many days ahead to look, default 14; overdue_days, how many days back to look for overdue work, default 14. Ask: 'What should I do today?'",
+      "Answers 'what should I do today?' One digest across your courses that opens with a Start here line naming the most urgent item (the oldest overdue work, else the next thing due), then lists overdue work, work due soon, assignments with no due date, and the latest announcement subjects, each with the course name and due date. Submission status comes from the assignment list and the calendar adds quizzes and other activities. Input: course_ids, an optional array of course IDs to limit the digest; days_ahead, how many days ahead to look, default 14; overdue_days, how many days back to look for overdue work, default 14. Ask: 'What should I do today?'",
     inputSchema: {
       course_ids: z.array(courseId).optional(),
       days_ahead: z.number().int().min(1).max(60).optional().describe("How many days ahead to look. Default 14."),
@@ -501,7 +501,10 @@ export const tools: ToolDef<Api>[] = [
         newsNotes.push(`Could not read announcements: ${reasonText(err)}`);
       }
 
+      // The oldest overdue item comes first, then the next one due, then undated work.
+      const first = overdue[0]?.text ?? soon[0]?.text ?? noDate[0];
       const sections: string[] = [];
+      if (first) sections.push(`Start here: ${first}`);
       if (overdue.length) sections.push(`Overdue:\n${bullets(overdue.map((i) => i.text))}`);
       if (soon.length) sections.push(`Due soon:\n${bullets(soon.map((i) => i.text))}`);
       if (noDate.length) sections.push(`No due date:\n${bullets(noDate)}`);

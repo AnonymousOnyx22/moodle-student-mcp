@@ -88,6 +88,8 @@ Tool call: get_todo
 {"name":"get_todo","arguments":{}}
 
 The server answers:
+Start here: Problem set 1 (Data Structures) was due Mon, Oct 19, 11:59 p.m. UTC, not submitted
+
 Overdue:
 - Problem set 1 (Data Structures) was due Mon, Oct 19, 11:59 p.m. UTC, not submitted
 

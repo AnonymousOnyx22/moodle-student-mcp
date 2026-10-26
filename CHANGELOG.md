@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- get_todo now opens with a "Start here" line that names the most urgent item: the oldest overdue work, otherwise the next thing due, otherwise work with no due date.
+
 ## 0.1.7
 
 - New tool get_course_page reads the text of the Page activities in a course, so pages listed in get_course_content can now be read.

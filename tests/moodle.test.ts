@@ -313,6 +313,7 @@ describe("moodle-student-mcp", () => {
   it("puts overdue work, work due soon, work with no due date and announcements in one digest", async () => {
     const { text, isError } = await call(await connect(), "get_todo");
     expect(isError).toBe(false);
+    expect(text).toMatch(/^Start here: .*\n\nOverdue:/);
     expect(text).toContain("Overdue:");
     expect(text).toMatch(/Essay 2 \(Data Structures\) was due .* not submitted/);
     expect(text).toContain("Due soon:");
