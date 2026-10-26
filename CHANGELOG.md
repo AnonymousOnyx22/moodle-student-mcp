@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- get_course_content now shows the intro text of each activity, such as assignment instructions, label text and page summaries, with the HTML removed.
+
 ## 0.1.6
 
 - get_file downloads files up to 25 MB and gives you the link for anything bigger, so a lecture video is never pulled into memory.

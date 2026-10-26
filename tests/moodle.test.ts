@@ -155,6 +155,7 @@ beforeAll(async () => {
           {
             name: "Intro slides",
             modname: "resource",
+            description: "<p>Read these <b>before</b> class. Bring questions.</p>",
             contents: [
               {
                 type: "file",
@@ -168,7 +169,7 @@ beforeAll(async () => {
               },
             ],
           },
-          { name: "Week 1 quiz", modname: "quiz" },
+          { name: "Week 1 quiz", modname: "quiz", description: "<p>Covers chapters 1 and 2.</p>" },
         ] }]);
       case "mod_forum_get_forums_by_courses": {
         if (q.wstoken === "forumtoken") {
@@ -440,6 +441,14 @@ describe("moodle-student-mcp", () => {
     expect(ann).toContain("Welcome");
     expect(ann).toContain("Hello class");
     expect(ann).toContain("Welcome (Networking Basics,");
+  });
+
+  it("shows the intro text of each activity in course content", async () => {
+    const { text } = await call(await connect(), "get_course_content", { course_id: 11 });
+    expect(text).toMatch(/Intro slides \(resource\).*\n\s+Read these before class\. Bring questions\./);
+    expect(text).toMatch(/Week 1 quiz \(quiz\)\n\s+Covers chapters 1 and 2\./);
+    expect(text).not.toContain("<b>");
+    expect(text).not.toContain("<p>");
   });
 
   it("shows file names and links without the key in course content", async () => {

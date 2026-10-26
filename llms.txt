@@ -53,7 +53,7 @@ Parameters: course_id (required, Moodle course ID from get_my_courses, string or
 Example call: `{"name":"get_course_grade_items","arguments":{"course_id":11}}`
 
 ### get_course_content
-Lists the sections of one course, such as weeks or topics, with up to 40 activities in each, such as pages, quizzes and forums. Each file shows its name and a link with your key removed, ready for get_file.
+Lists the sections of one course, such as weeks or topics, with up to 40 activities in each, such as pages, quizzes and forums. Each activity shows its intro text when there is one, such as assignment instructions, label text or a page summary. Each file shows its name and a link with your key removed, ready for get_file.
 Parameters: course_id (required, Moodle course ID from get_my_courses, string or number).
 Example call: `{"name":"get_course_content","arguments":{"course_id":11}}`
 

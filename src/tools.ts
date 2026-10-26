@@ -33,6 +33,8 @@ const courseId = z.union([z.string(), z.number()]).describe("Moodle course ID. U
 const DAY = 86400;
 /** The most items a due date list shows. */
 const MAX_ITEMS = 50;
+/** The most intro text shown for one activity in get_course_content. */
+const MAX_INTRO = 600;
 /** The most assignments looked at in one course. */
 const MAX_COURSE_ASSIGNMENTS = 25;
 /** Events asked for when a course filter will drop some of them. */
@@ -90,6 +92,14 @@ function fileLink(file: any): string {
   } catch {
     return stripKeyParams(raw);
   }
+}
+
+/** The intro text of one activity as indented plain lines, or an empty string when it has none. */
+function introText(module: any): string {
+  const text = stripHtml(module?.description, MAX_INTRO);
+  if (!text) return "";
+  const lines = text.split("\n").map((line) => (line.trim() ? `    ${line.trim()}` : ""));
+  return `\n${lines.join("\n")}`;
 }
 
 interface Course {
@@ -586,7 +596,7 @@ export const tools: ToolDef<Api>[] = [
     name: "get_course_content",
     title: "Course content",
     description:
-      "Answers 'what's in this course?' Lists the sections of one course, such as weeks or topics, with up to 40 activities in each, such as pages, quizzes and forums. Each file shows its name and a link with your key removed, so the link is safe to show in a chat and get_file can still open it. Input: course_id, the ID from get_my_courses. Ask: 'What materials are posted in Networking Basics?'",
+      "Answers 'what's in this course?' Lists the sections of one course, such as weeks or topics, with up to 40 activities in each, such as pages, quizzes and forums. Each activity shows its intro text when the course has one, such as assignment instructions, label text or a page summary. Each file shows its name and a link with your key removed, so the link is safe to show in a chat and get_file can still open it. Input: course_id, the ID from get_my_courses. Ask: 'What materials are posted in Networking Basics?'",
     inputSchema: { course_id: courseId },
     run: async ({ course_id }, api) => {
       const sections = await api.call<any[]>("core_course_get_contents", { courseid: course_id });
@@ -597,7 +607,7 @@ export const tools: ToolDef<Api>[] = [
             const files = (m.contents ?? [])
               .filter((c: any) => c?.type === "file" && c?.fileurl)
               .map((c: any) => `${fileName(c)} (${fileLink(c)})`);
-            return `  - ${m.name} (${m.modname})${files.length ? " files: " + files.join(", ") : ""}`;
+            return `  - ${m.name} (${m.modname})${files.length ? " files: " + files.join(", ") : ""}${introText(m)}`;
           });
           return `${s.name || "Section"}\n${mods.join("\n") || "  (empty)"}`;
         })
