@@ -267,6 +267,8 @@ describe("moodle-student-mcp", () => {
     const od = (await call(c, "get_overdue")).text;
     expect(od).toContain("Lab 2 is due");
     expect(od).not.toContain("Quiz closed");
+    // oldest first, so Essay draft (2 days back) comes before Lab 2 (1 day back)
+    expect(od.indexOf("Essay draft")).toBeLessThan(od.indexOf("Lab 2 is due"));
   });
 
   it("leaves out course events that need no action", async () => {

@@ -411,7 +411,9 @@ export const tools: ToolDef<Api>[] = [
       const now = Math.floor(Date.now() / 1000);
       const events = (await calendarEvents(api, now - 45 * DAY, now, course_ids))
         .filter((e) => e.action?.actionable)
-        .slice(0, MAX_ITEMS);
+        .sort((a, b) => b.timesort - a.timesort)
+        .slice(0, MAX_ITEMS)
+        .reverse();
       return bullets(
         events.map((e) => `${e.name} (${e.course?.fullname ?? "course"}) was due ${fmtUnix(e.timesort)}`),
         "Nothing overdue.",

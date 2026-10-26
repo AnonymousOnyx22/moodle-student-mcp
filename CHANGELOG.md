@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- get_overdue now sorts by due date before cutting the list at 50 items, so a busy term keeps the most recent misses. The list is shown oldest first.
 - get_todo now opens with a "Start here" line that names the most urgent item: the oldest overdue work, otherwise the next thing due, otherwise work with no due date.
 
 ## 0.1.7
