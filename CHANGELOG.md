@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.9
+
+- Update the table of sibling MCP servers in the README
+
 ## 0.1.8
 
 - The README "What you can ask" list now has example prompts for reading course content, pages and files.

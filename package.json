@@ -1,6 +1,6 @@
 {
   "name": "moodle-student-mcp",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Moodle MCP server for students. A Model Context Protocol MCP server that gives AI apps like Claude, ChatGPT and Cursor read only access to Moodle courses: assignments, due dates, grades, announcements and course content.",
   "type": "module",
   "main": "build/src/index.js",
