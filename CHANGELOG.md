@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.10
+
+- Update the table of sibling MCP servers in the README
+
 ## 0.1.9
 
 - Update the table of sibling MCP servers in the README
