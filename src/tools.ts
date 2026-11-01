@@ -181,6 +181,15 @@ async function calendarEvents(api: Api, from: number, to: number, courseIds?: (s
   return asked.length ? events.filter((e) => wanted.includes(eventCourseId(e))) : events;
 }
 
+/** Midnight local time of a YYYY-MM-DD date as unix seconds, or undefined when the text is not a real date. */
+function dayStart(text: string): number | undefined {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text.trim());
+  if (!m) return undefined;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  if (d.getMonth() !== Number(m[2]) - 1 || d.getDate() !== Number(m[3])) return undefined;
+  return Math.floor(d.getTime() / 1000);
+}
+
 /** A key that matches the same piece of work from the calendar and the assignment list. */
 function todoKey(courseid: number, name: unknown): string {
   return `${courseid}:${String(name ?? "").trim().toLowerCase()}`;
@@ -417,6 +426,31 @@ export const tools: ToolDef<Api>[] = [
       return bullets(
         events.map((e) => `${e.name} (${e.course?.fullname ?? "course"}) was due ${fmtUnix(e.timesort)}`),
         "Nothing overdue.",
+      );
+    },
+  },
+  {
+    name: "get_calendar",
+    title: "Calendar for a date range",
+    description:
+      "Answers 'what is on my calendar between these dates?' Lists up to 50 calendar events from start_date to end_date, both included, oldest first, with the course name and date. Unlike get_upcoming_due_dates and get_overdue it works for any dates, past or future, and also shows events that need no action. Input: start_date and end_date as YYYY-MM-DD, in the time zone of the computer running the server; course_ids, an optional array of course IDs to limit the list. The window can span up to 366 days. Ask: 'What is due the week of Dec 1?'",
+    inputSchema: {
+      start_date: z.string().describe("First day to show, as YYYY-MM-DD."),
+      end_date: z.string().describe("Last day to show, as YYYY-MM-DD. Events on this day are included."),
+      course_ids: z.array(courseId).optional(),
+    },
+    run: async ({ start_date, end_date, course_ids }, api) => {
+      const from = dayStart(start_date);
+      const last = dayStart(end_date);
+      if (from === undefined || last === undefined) return "start_date and end_date must be real dates written as YYYY-MM-DD.";
+      if (last < from) return "end_date is before start_date.";
+      if (last - from > 366 * DAY) return "Pick a window of 366 days or less.";
+      const events = (await calendarEvents(api, from, last + DAY - 1, course_ids))
+        .sort((a, b) => a.timesort - b.timesort)
+        .slice(0, MAX_ITEMS);
+      return bullets(
+        events.map((e) => `${e.name} (${e.course?.fullname ?? "course"}) ${fmtUnix(e.timesort)}`),
+        `No calendar events from ${start_date} to ${end_date}.`,
       );
     },
   },

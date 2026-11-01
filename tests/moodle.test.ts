@@ -262,13 +262,13 @@ async function call(client: Client, name: string, args: Record<string, unknown> 
 describe("moodle-student-mcp", () => {
   it("exposes only read-only tools", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(16);
+    expect(tools.length).toBe(17);
     for (const t of tools) expect(t.annotations?.readOnlyHint).toBe(true);
   });
 
   it("describes every tool with the question it answers, its inputs and a sample prompt", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(16);
+    expect(tools.length).toBe(17);
     for (const t of tools) {
       expect(t.description, t.name).toMatch(/^Answers '/);
       expect(t.description, t.name).toMatch(/Ask: '/);
@@ -286,6 +286,22 @@ describe("moodle-student-mcp", () => {
     expect(text).toContain("Networking Basics");
     expect(text).not.toContain("Old Course");
     expect(text).not.toContain("Hidden Course");
+  });
+
+  it("lists calendar events for a date range, including ones with no action", async () => {
+    const c = await connect();
+    const day = (offset: number) => {
+      const d = new Date(Date.now() + offset * 86400000);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+    const text = (await call(c, "get_calendar", { start_date: day(4), end_date: day(6) })).text;
+    expect(text).toContain("Course starts");
+    expect(text).not.toContain("Quiz 1 closes");
+    const only = (await call(c, "get_calendar", { start_date: day(-5), end_date: day(10), course_ids: [14] })).text;
+    expect(only).toContain("Problem set 3");
+    expect(only).not.toContain("Lab 4");
+    expect((await call(c, "get_calendar", { start_date: "2026-02-30", end_date: "2026-03-01" })).text).toContain("YYYY-MM-DD");
+    expect((await call(c, "get_calendar", { start_date: "2026-03-02", end_date: "2026-03-01" })).text).toContain("before");
   });
 
   it("sorts upcoming work and finds overdue actionable work only", async () => {

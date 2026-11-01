@@ -241,7 +241,7 @@ If a tool says Access denied, your school's admin may have left a function out o
 | --- | --- |
 | `core_webservice_get_site_info` | Sign in check and `doctor` |
 | `core_enrol_get_users_courses` | `get_my_courses` and every tool that lists courses |
-| `core_calendar_get_action_events_by_timeframe` | `get_upcoming_due_dates`, `get_overdue`, `get_todo` |
+| `core_calendar_get_action_events_by_timeframe` | `get_upcoming_due_dates`, `get_overdue`, `get_calendar`, `get_todo` |
 | `mod_assign_get_assignments` | `get_assignments`, `get_assignment_details`, `get_missing_work`, `get_todo` |
 | `mod_assign_get_submission_status` | `get_assignments`, `get_missing_work`, `get_todo` |
 | `mod_quiz_get_quizzes_by_courses` | `get_quizzes` |
@@ -285,6 +285,7 @@ All tools are read only.
 | `get_my_courses` | Your current courses and their IDs |
 | `get_upcoming_due_dates` | Items that still need action and are due in the next 60 days, soonest first. Plain course events such as 'Course starts' are left out. Takes an optional `course_ids` list of course IDs |
 | `get_overdue` | Past due items that still need action. Takes an optional `course_ids` list of course IDs |
+| `get_calendar` | Calendar events between a `start_date` and an `end_date` (YYYY-MM-DD), oldest first, including events that need no action. Works for any dates, up to 366 days. Takes an optional `course_ids` list of course IDs |
 | `get_todo` | One digest for what to do next: overdue work, work due soon, assignments with no due date and the latest announcement subjects, each with the course name and due date. Takes an optional `course_ids` list, plus `days_ahead` and `overdue_days` to set the window |
 | `get_assignments` | Assignments for a course with due dates and submission status. Takes a `course_id` from `get_my_courses` |
 | `get_assignment_details` | The due date, instructions and attached files of the assignments in a course, up to 5 at a time. Attached files come with a link ready for `get_file`. Takes a `course_id` from `get_my_courses` and an optional `assignment_name`, part of an assignment name, to pick one |
