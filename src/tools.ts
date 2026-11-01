@@ -809,7 +809,8 @@ export const tools: ToolDef<Api>[] = [
             const who = d.userfullname ? `${d.userfullname}, ` : "";
             const replies = Number(d.numreplies) || 0;
             const text = stripHtml(String(d.message ?? ""), 300).replace(/\n/g, " ");
-            return `${d.subject ?? d.name ?? "Discussion"} (${who}${fmtUnix(Number(d.timemodified) || 0)}, ${replies} ${replies === 1 ? "reply" : "replies"})\n  ${text}`;
+            const did = d.discussion ? `, discussion_id ${d.discussion}` : "";
+            return `${d.subject ?? d.name ?? "Discussion"} (${who}${fmtUnix(Number(d.timemodified) || 0)}, ${replies} ${replies === 1 ? "reply" : "replies"}${did})\n  ${text}`;
           });
           sections.push(`${label}\n${bullets(lines, "No discussions yet.")}`);
         } catch (err) {
@@ -822,6 +823,26 @@ export const tools: ToolDef<Api>[] = [
       const more = forums.length - shown.length;
       if (more > 0) problems.push(`${more} more forum${more === 1 ? "" : "s"} not shown. Use forum_name to pick one.`);
       return [...sections, ...(problems.length ? [bullets(problems)] : [])].join("\n\n");
+    },
+  },
+  {
+    name: "get_forum_posts",
+    title: "Forum thread",
+    description:
+      "Answers 'what did the instructor answer in that thread?' Reads one forum discussion with the first post and every reply, each with author, date and text, up to 50 posts of up to 2000 characters each. Input: discussion_id, the number shown as discussion_id in get_forum_discussions. Ask: 'What did the instructor answer in the Lab 3 thread?'",
+    inputSchema: { discussion_id: z.union([z.string(), z.number()]).describe("Discussion ID shown in get_forum_discussions.") },
+    run: async ({ discussion_id }, api) => {
+      const r = await api.call<{ posts?: any[] }>("mod_forum_get_discussion_posts", { discussionid: discussion_id });
+      const posts = [...(r?.posts ?? [])].sort((a, b) => (Number(a.timecreated) || 0) - (Number(b.timecreated) || 0));
+      if (!posts.length) return "This discussion has no posts, or the ID is not right. Use get_forum_discussions to find it.";
+      const lines = posts.slice(0, 50).map((p) => {
+        const who = p.author?.fullname ?? p.userfullname;
+        const head = [p.subject, who, fmtUnix(Number(p.timecreated) || 0)].filter(Boolean).join(", ");
+        const reply = p.parentid ? " (reply)" : "";
+        return `${head}${reply}\n  ${stripHtml(String(p.message ?? ""), 2000).replace(/\n/g, "\n  ")}`;
+      });
+      const more = posts.length - lines.length;
+      return bullets(more > 0 ? [...lines, `${more} more post${more === 1 ? "" : "s"} not shown.`] : lines);
     },
   },
   {

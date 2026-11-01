@@ -217,6 +217,19 @@
         }
       ],
       "example": { "name": "get_forum_discussions", "arguments": { "course_id": 11, "forum_name": "Chat" } }
+    },
+    {
+      "name": "get_forum_posts",
+      "description": "Reads one forum discussion with the first post and every reply, each with author, date and text, up to 50 posts of up to 2000 characters each.",
+      "parameters": [
+        {
+          "name": "discussion_id",
+          "type": "string | number",
+          "required": true,
+          "description": "Discussion ID shown in get_forum_discussions."
+        }
+      ],
+      "example": { "name": "get_forum_posts", "arguments": { "discussion_id": 5 } }
     }
   ]
 }

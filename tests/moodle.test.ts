@@ -208,8 +208,16 @@ beforeAll(async () => {
         if (q.forumid === "7") {
           return send({ discussions: [{ subject: "Lab due Friday", name: "Lab due Friday", timemodified: now - 2000, message: "<p>Bring your <b>laptop</b></p>" }] });
         }
-        return send({ discussions: [{ subject: "Welcome", name: "Welcome", timemodified: now - 1000, message: "<p>Hello <b>class</b></p>" }] });
+        return send({ discussions: [{ discussion: 9, subject: "Welcome", name: "Welcome", timemodified: now - 1000, message: "<p>Hello <b>class</b></p>" }] });
       }
+      case "mod_forum_get_discussion_posts":
+        if (q.discussionid === "9") {
+          return send({ posts: [
+            { id: 2, parentid: 1, subject: "Re: Welcome", author: { fullname: "Prof Lee" }, timecreated: now - 500, message: "<p>Use <b>VLAN 10</b></p>" },
+            { id: 1, parentid: 0, subject: "Welcome", author: { fullname: "Sam" }, timecreated: now - 900, message: "<p>Which VLAN?</p>" },
+          ] });
+        }
+        return send({ posts: [] });
       case "mod_quiz_get_quizzes_by_courses":
         return send({
           quizzes: q["courseids[0]"] === "11"
@@ -254,13 +262,13 @@ async function call(client: Client, name: string, args: Record<string, unknown> 
 describe("moodle-student-mcp", () => {
   it("exposes only read-only tools", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(15);
+    expect(tools.length).toBe(16);
     for (const t of tools) expect(t.annotations?.readOnlyHint).toBe(true);
   });
 
   it("describes every tool with the question it answers, its inputs and a sample prompt", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(15);
+    expect(tools.length).toBe(16);
     for (const t of tools) {
       expect(t.description, t.name).toMatch(/^Answers '/);
       expect(t.description, t.name).toMatch(/Ask: '/);
@@ -530,6 +538,17 @@ describe("moodle-student-mcp", () => {
     expect(none.text).toContain('No forum in this course has "nothing"');
     const empty = await call(c, "get_forum_discussions", { course_id: 99 });
     expect(empty.text).toContain("no discussion forums");
+  });
+
+  it("reads one forum thread with its replies", async () => {
+    const c = await connect();
+    const list = (await call(c, "get_forum_discussions", { course_id: 11 })).text;
+    expect(list).toContain("discussion_id 9");
+    const text = (await call(c, "get_forum_posts", { discussion_id: 9 })).text;
+    expect(text.indexOf("Which VLAN?")).toBeLessThan(text.indexOf("Use VLAN 10"));
+    expect(text).toContain("Prof Lee");
+    expect(text).toContain("(reply)");
+    expect((await call(c, "get_forum_posts", { discussion_id: 1 })).text).toContain("no posts");
   });
 
   it("reads page activities and filters by title", async () => {

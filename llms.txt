@@ -88,6 +88,11 @@ Lists the latest discussions in the forums of one course, with subject, author, 
 Parameters: course_id (required, Moodle course ID from get_my_courses, string or number), forum_name (optional, part of a forum name to pick one forum; leave it out to read the first forums).
 Example call: `{"name":"get_forum_discussions","arguments":{"course_id":11,"forum_name":"Chat"}}`
 
+### get_forum_posts
+Reads one forum discussion with the first post and every reply, each with author, date and text, up to 50 posts of up to 2000 characters each.
+Parameters: discussion_id (required, the number shown as discussion_id in get_forum_discussions, string or number).
+Example call: `{"name":"get_forum_posts","arguments":{"discussion_id":5}}`
+
 ## Links
 - Source and README, https://github.com/AnonymousOnyx22/moodle-student-mcp
 - More free student MCP servers, https://brightspacemcp.com/more-mcps/
