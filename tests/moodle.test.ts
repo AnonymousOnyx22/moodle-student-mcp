@@ -119,7 +119,7 @@ beforeAll(async () => {
         const ids = Object.keys(q).filter((k) => k.startsWith("courseids[")).map((k) => q[k]);
         const byCourse: Record<string, unknown[]> = {
           "11": [
-            { id: 1, name: "Lab 3", duedate: now + 5000 },
+            { id: 1, name: "Lab 3", duedate: now + 5000, intro: "<p>Configure a router.</p><p>Submit a PDF.</p>", introattachments: [{ filename: "lab3.pdf", fileurl: "https://moodle.example.edu/webservice/pluginfile.php/1/mod_assign/introattachment/0/lab3.pdf?token=abc" }] },
             { id: 2, name: "Lab 2", duedate: now - 5000 },
             { id: 3, name: "Lab 1", duedate: now - 9000 },
             { id: 8, name: "Reading notes", duedate: 0 },
@@ -254,13 +254,13 @@ async function call(client: Client, name: string, args: Record<string, unknown> 
 describe("moodle-student-mcp", () => {
   it("exposes only read-only tools", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(14);
+    expect(tools.length).toBe(15);
     for (const t of tools) expect(t.annotations?.readOnlyHint).toBe(true);
   });
 
   it("describes every tool with the question it answers, its inputs and a sample prompt", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(14);
+    expect(tools.length).toBe(15);
     for (const t of tools) {
       expect(t.description, t.name).toMatch(/^Answers '/);
       expect(t.description, t.name).toMatch(/Ask: '/);
@@ -400,6 +400,20 @@ describe("moodle-student-mcp", () => {
     expect(text).toMatch(/Lab 3.*not submitted/);
     expect(text).toMatch(/Lab 2.*submitted/);
     expect(text).toMatch(/Lab 1.*graded 8.00 \/ 10.00/);
+  });
+
+  it("shows assignment instructions and attached files without the key", async () => {
+    const c = await connect();
+    const { text } = await call(c, "get_assignment_details", { course_id: 11, assignment_name: "lab 3" });
+    expect(text).toMatch(/Lab 3 due/);
+    expect(text).toContain("Configure a router.");
+    expect(text).toContain("lab3.pdf");
+    expect(text).toContain("/webservice/pluginfile.php/1/mod_assign/introattachment/0/lab3.pdf");
+    expect(text).not.toContain("token=");
+    const none = (await call(c, "get_assignment_details", { course_id: 11, assignment_name: "zzz" })).text;
+    expect(none).toMatch(/No assignment/);
+    const all = (await call(c, "get_assignment_details", { course_id: 11 })).text;
+    expect(all).toMatch(/Lab 1 due[\s\S]*No instructions posted/);
   });
 
   it("keeps listing assignments when one status fails", async () => {

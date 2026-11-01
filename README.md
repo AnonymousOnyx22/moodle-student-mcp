@@ -242,7 +242,7 @@ If a tool says Access denied, your school's admin may have left a function out o
 | `core_webservice_get_site_info` | Sign in check and `doctor` |
 | `core_enrol_get_users_courses` | `get_my_courses` and every tool that lists courses |
 | `core_calendar_get_action_events_by_timeframe` | `get_upcoming_due_dates`, `get_overdue`, `get_todo` |
-| `mod_assign_get_assignments` | `get_assignments`, `get_missing_work`, `get_todo` |
+| `mod_assign_get_assignments` | `get_assignments`, `get_assignment_details`, `get_missing_work`, `get_todo` |
 | `mod_assign_get_submission_status` | `get_assignments`, `get_missing_work`, `get_todo` |
 | `mod_quiz_get_quizzes_by_courses` | `get_quizzes` |
 | `mod_quiz_get_user_attempts` | `get_quizzes` |
@@ -286,6 +286,7 @@ All tools are read only.
 | `get_overdue` | Past due items that still need action. Takes an optional `course_ids` list of course IDs |
 | `get_todo` | One digest for what to do next: overdue work, work due soon, assignments with no due date and the latest announcement subjects, each with the course name and due date. Takes an optional `course_ids` list, plus `days_ahead` and `overdue_days` to set the window |
 | `get_assignments` | Assignments for a course with due dates and submission status. Takes a `course_id` from `get_my_courses` |
+| `get_assignment_details` | The due date, instructions and attached files of the assignments in a course, up to 5 at a time. Attached files come with a link ready for `get_file`. Takes a `course_id` from `get_my_courses` and an optional `assignment_name`, part of an assignment name, to pick one |
 | `get_quizzes` | Quizzes for a course with open and close dates, time limit, attempts used and allowed, and your best grade. Takes a `course_id` from `get_my_courses` |
 | `get_missing_work` | Assignments you have not handed in yet, drafts included, with the course name and the due date. Takes an optional `course_ids` list of course IDs |
 | `get_my_grades` | Current grade for each course |

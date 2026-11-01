@@ -78,6 +78,25 @@
       "example": { "name": "get_assignments", "arguments": { "course_id": 11 } }
     },
     {
+      "name": "get_assignment_details",
+      "description": "Shows the due date, the instructions and the attached files of the assignments in one course, up to 5 at a time. Each attached file shows its name and a link with your key removed, ready for get_file.",
+      "parameters": [
+        {
+          "name": "course_id",
+          "type": "string | number",
+          "required": true,
+          "description": "Moodle course ID from get_my_courses."
+        },
+        {
+          "name": "assignment_name",
+          "type": "string",
+          "required": false,
+          "description": "Part of the assignment name. Leave out to read the first assignments by due date."
+        }
+      ],
+      "example": { "name": "get_assignment_details", "arguments": { "course_id": 11, "assignment_name": "Lab 3" } }
+    },
+    {
       "name": "get_quizzes",
       "description": "Lists up to 25 quizzes for one course with the open and close dates, the time limit, the attempts used and allowed, and your best grade.",
       "parameters": [

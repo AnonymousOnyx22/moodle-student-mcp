@@ -558,6 +558,39 @@ export const tools: ToolDef<Api>[] = [
     },
   },
   {
+    name: "get_assignment_details",
+    title: "Assignment details",
+    description:
+      "Answers 'what does assignment X require?' Shows the due date, the instructions and the attached files of the assignments in one course, up to 5 at a time. Each attached file shows its name and a link with your key removed, ready for get_file. Input: course_id from get_my_courses, and an optional assignment_name, part of an assignment name, to pick one. Ask: 'What does the Lab 3 assignment in Networking Basics require?'",
+    inputSchema: {
+      course_id: courseId,
+      assignment_name: z.string().optional().describe("Part of the assignment name. Leave out to read the first assignments by due date."),
+    },
+    run: async ({ course_id, assignment_name }, api) => {
+      const r = await api.call<{ courses?: { assignments?: any[] }[] }>("mod_assign_get_assignments", { courseids: [course_id] });
+      let list = (r.courses?.[0]?.assignments ?? []).filter((a) => a);
+      const wanted = String(assignment_name ?? "").trim().toLowerCase();
+      if (wanted) {
+        list = list.filter((a) => String(a.name ?? "").toLowerCase().includes(wanted));
+        if (!list.length) return `No assignment in this course has "${assignment_name}" in its name.`;
+      }
+      if (!list.length) return "No assignments found.";
+      list.sort((a, b) => (a.duedate || 9e12) - (b.duedate || 9e12));
+      const shown = list.slice(0, 5);
+      const blocks = shown.map((a) => {
+        const out = [`${a.name} due ${fmtUnix(a.duedate)}`];
+        const text = stripHtml(String(a.intro ?? ""), MAX_PAGE_TEXT);
+        out.push(text ? text.split("\n").map((l) => (l.trim() ? `  ${l.trim()}` : "")).join("\n") : "  No instructions posted.");
+        const files = (a.introattachments ?? []).filter((f: any) => f);
+        if (files.length) out.push("  Files:\n" + files.map((f: any) => `    - ${fileName(f)}: ${fileLink(f)}`).join("\n"));
+        return out.join("\n");
+      });
+      const more = list.length - shown.length;
+      if (more > 0) blocks.push(`${more} more assignment${more === 1 ? "" : "s"} not shown. Use assignment_name to pick one.`);
+      return blocks.join("\n\n");
+    },
+  },
+  {
     name: "get_quizzes",
     title: "Course quizzes",
     description:
