@@ -747,6 +747,51 @@ export const tools: ToolDef<Api>[] = [
     },
   },
   {
+    name: "get_forum_discussions",
+    title: "Forum discussions",
+    description:
+      "Answers 'what are people discussing in the Networking Basics forum?' Lists the latest discussions in the forums of one course, with subject, author, date, reply count and the start of the text, up to 5 discussions from each of up to 5 forums. Announcement forums are left out, use get_announcements for those. A forum the school server will not open is named at the end and the rest still shows. Input: course_id from get_my_courses, and an optional forum_name, part of a forum name, to pick one forum. Ask: 'What are people discussing in the Networking Basics forum?'",
+    inputSchema: {
+      course_id: courseId,
+      forum_name: z.string().optional().describe("Part of the forum name. Leave out to read the first forums of the course."),
+    },
+    run: async ({ course_id, forum_name }, api) => {
+      const all = await api.call<any[]>("mod_forum_get_forums_by_courses", { courseids: [course_id] });
+      let forums = (all ?? []).filter((f) => f && f.type !== "news");
+      if (!forums.length) return "This course has no discussion forums.";
+      const wanted = String(forum_name ?? "").trim().toLowerCase();
+      if (wanted) {
+        forums = forums.filter((f) => String(f.name ?? "").toLowerCase().includes(wanted));
+        if (!forums.length) return `No forum in this course has "${forum_name}" in its name.`;
+      }
+      const shown = forums.slice(0, 5);
+      const sections: string[] = [];
+      const problems: string[] = [];
+      let firstError: unknown;
+      for (const f of shown) {
+        const label = f.name ?? `forum ${f.id}`;
+        try {
+          const r = await api.call<{ discussions?: any[] }>("mod_forum_get_forum_discussions", { forumid: f.id, perpage: 5 });
+          const lines = (r?.discussions ?? []).slice(0, 5).map((d) => {
+            const who = d.userfullname ? `${d.userfullname}, ` : "";
+            const replies = Number(d.numreplies) || 0;
+            const text = stripHtml(String(d.message ?? ""), 300).replace(/\n/g, " ");
+            return `${d.subject ?? d.name ?? "Discussion"} (${who}${fmtUnix(Number(d.timemodified) || 0)}, ${replies} ${replies === 1 ? "reply" : "replies"})\n  ${text}`;
+          });
+          sections.push(`${label}\n${bullets(lines, "No discussions yet.")}`);
+        } catch (err) {
+          if (isSiteWideError(err)) throw err;
+          firstError ??= err;
+          problems.push(`Could not read the ${label} forum: ${reasonText(err)}`);
+        }
+      }
+      if (!sections.length) throw firstError;
+      const more = forums.length - shown.length;
+      if (more > 0) problems.push(`${more} more forum${more === 1 ? "" : "s"} not shown. Use forum_name to pick one.`);
+      return [...sections, ...(problems.length ? [bullets(problems)] : [])].join("\n\n");
+    },
+  },
+  {
     name: "get_file",
     title: "Course file",
     description:

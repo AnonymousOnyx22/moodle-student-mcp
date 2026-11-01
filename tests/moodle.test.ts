@@ -254,13 +254,13 @@ async function call(client: Client, name: string, args: Record<string, unknown> 
 describe("moodle-student-mcp", () => {
   it("exposes only read-only tools", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(13);
+    expect(tools.length).toBe(14);
     for (const t of tools) expect(t.annotations?.readOnlyHint).toBe(true);
   });
 
   it("describes every tool with the question it answers, its inputs and a sample prompt", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(13);
+    expect(tools.length).toBe(14);
     for (const t of tools) {
       expect(t.description, t.name).toMatch(/^Answers '/);
       expect(t.description, t.name).toMatch(/Ask: '/);
@@ -500,6 +500,22 @@ describe("moodle-student-mcp", () => {
     expect(ann).toContain("Welcome");
     expect(ann).toContain("Hello class");
     expect(ann).toContain("Welcome (Networking Basics,");
+  });
+
+  it("reads course forum discussions and leaves out the news forum", async () => {
+    const c = await connect();
+    const text = (await call(c, "get_forum_discussions", { course_id: 11 })).text;
+    expect(text).toContain("Chat");
+    expect(text).toContain("Welcome (");
+    expect(text).toContain("0 replies");
+    expect(text).toContain("Hello class");
+    expect(text).not.toContain("Announcements");
+    const named = (await call(c, "get_forum_discussions", { course_id: 11, forum_name: "chat" })).text;
+    expect(named).toContain("Welcome");
+    const none = await call(c, "get_forum_discussions", { course_id: 11, forum_name: "nothing" });
+    expect(none.text).toContain('No forum in this course has "nothing"');
+    const empty = await call(c, "get_forum_discussions", { course_id: 99 });
+    expect(empty.text).toContain("no discussion forums");
   });
 
   it("reads page activities and filters by title", async () => {

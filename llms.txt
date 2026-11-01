@@ -78,6 +78,11 @@ Lists the latest news forum posts with subject, course name and text, up to 5 po
 Parameters: course_ids (optional, array of course IDs from get_my_courses to limit the search, string or number items; leave it out to cover all current courses).
 Example call: `{"name":"get_announcements","arguments":{"course_ids":[11]}}`
 
+### get_forum_discussions
+Lists the latest discussions in the forums of one course, with subject, author, date, reply count and the start of the text, up to 5 discussions from each of up to 5 forums. Announcement forums are left out, use get_announcements for those. A forum the school server will not open is named at the end and the rest still shows.
+Parameters: course_id (required, Moodle course ID from get_my_courses, string or number), forum_name (optional, part of a forum name to pick one forum; leave it out to read the first forums).
+Example call: `{"name":"get_forum_discussions","arguments":{"course_id":11,"forum_name":"Chat"}}`
+
 ## Links
 - Source and README, https://github.com/AnonymousOnyx22/moodle-student-mcp
 - More free student MCP servers, https://brightspacemcp.com/more-mcps/

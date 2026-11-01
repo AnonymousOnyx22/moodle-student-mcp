@@ -179,6 +179,25 @@
         }
       ],
       "example": { "name": "get_announcements", "arguments": { "course_ids": [11] } }
+    },
+    {
+      "name": "get_forum_discussions",
+      "description": "Lists the latest discussions in the forums of one course, with subject, author, date, reply count and the start of the text, up to 5 discussions from each of up to 5 forums. Announcement forums are left out, use get_announcements for those. A forum the school server will not open is named at the end and the rest still shows.",
+      "parameters": [
+        {
+          "name": "course_id",
+          "type": "string | number",
+          "required": true,
+          "description": "Moodle course ID from get_my_courses."
+        },
+        {
+          "name": "forum_name",
+          "type": "string",
+          "required": false,
+          "description": "Part of the forum name. Leave out to read the first forums of the course."
+        }
+      ],
+      "example": { "name": "get_forum_discussions", "arguments": { "course_id": 11, "forum_name": "Chat" } }
     }
   ]
 }

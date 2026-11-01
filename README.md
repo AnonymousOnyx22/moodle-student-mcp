@@ -251,8 +251,8 @@ If a tool says Access denied, your school's admin may have left a function out o
 | `gradereport_user_get_grade_items` | `get_course_grade_items` |
 | `core_course_get_contents` | `get_course_content` |
 | `mod_page_get_pages_by_courses` | `get_course_page` |
-| `mod_forum_get_forums_by_courses` | `get_announcements`, `get_todo` |
-| `mod_forum_get_forum_discussions` | `get_announcements`, `get_todo` |
+| `mod_forum_get_forums_by_courses` | `get_announcements`, `get_forum_discussions`, `get_todo` |
+| `mod_forum_get_forum_discussions` | `get_announcements`, `get_forum_discussions`, `get_todo` |
 
 `get_file` does not use a web service function. It downloads a file link from your school's Moodle site with your key.
 
@@ -269,6 +269,7 @@ If only some functions are off, the other tools keep working.
 - "What work am I still missing?"
 - "What's my grade in each course, and what's in the gradebook for Networking?"
 - "Any new announcements?"
+- "What are people discussing in the Networking Basics forum?"
 - "Which assignments have I not submitted yet?"
 - "What's in each week of Networking Basics?"
 - "Read me the Week 1 page in Networking Basics."
@@ -293,6 +294,7 @@ All tools are read only.
 | `get_course_page` | Read the Page activities of a course as plain text, up to 5 pages with up to 20000 characters each. Images and embedded media are not shown. Takes a `course_id` from `get_my_courses` and an optional `page_name`, part of a page title from `get_course_content`, to pick one page |
 | `get_file` | Download a course file from your school's Moodle site and return its text. Plain text, HTML and PDF files with readable text come back as text. A PDF with no extractable text comes back with its file name, a link with your key removed and a note to open it in Moodle. Any other file type comes back with its file name, a link with your key removed and a note that only plain text, HTML and PDF are supported, with a note to open it in Moodle. Takes a `file_url` from `get_course_content` |
 | `get_announcements` | Recent announcements with the course name and date on each one, and any course Moodle will not open left out. Takes an optional `course_ids` list of course IDs |
+| `get_forum_discussions` | Latest discussions in the forums of a course, with author, date, reply count and the start of the text. Announcement forums are left out. Takes a `course_id` from `get_my_courses` and an optional `forum_name`, part of a forum name, to pick one forum |
 
 ## Privacy and security
 
