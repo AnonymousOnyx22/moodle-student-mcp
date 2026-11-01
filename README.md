@@ -231,6 +231,33 @@ To check your setup first, run `npx moodle-student-mcp doctor` with the two envi
 
 > If you can't find a Security keys page, your school has turned off the mobile web service, or signs you in through single sign on without exposing keys. In that case this server can't connect to your account.
 
+## Supported Moodle versions and web service functions
+
+This server talks to the standard Moodle web service API with your Moodle mobile web service key. It does not need a plugin or a custom service. I have not tested a list of Moodle versions, so there is no version table here. Tests run against a fake Moodle server. As a rule, a site where the official Moodle mobile app works for students should work here too, and `npx moodle-student-mcp doctor` tells you if your site answers.
+
+If a tool says Access denied, your school's admin may have left a function out of the mobile web service. These are the functions the server calls, and the tools that use them:
+
+| Web service function | Used by |
+| --- | --- |
+| `core_webservice_get_site_info` | Sign in check and `doctor` |
+| `core_enrol_get_users_courses` | `get_my_courses` and every tool that lists courses |
+| `core_calendar_get_action_events_by_timeframe` | `get_upcoming_due_dates`, `get_overdue`, `get_todo` |
+| `mod_assign_get_assignments` | `get_assignments`, `get_missing_work`, `get_todo` |
+| `mod_assign_get_submission_status` | `get_assignments`, `get_missing_work`, `get_todo` |
+| `mod_quiz_get_quizzes_by_courses` | `get_quizzes` |
+| `mod_quiz_get_user_attempts` | `get_quizzes` |
+| `mod_quiz_get_user_best_grade` | `get_quizzes` |
+| `gradereport_overview_get_course_grades` | `get_my_grades` |
+| `gradereport_user_get_grade_items` | `get_course_grade_items` |
+| `core_course_get_contents` | `get_course_content` |
+| `mod_page_get_pages_by_courses` | `get_course_page` |
+| `mod_forum_get_forums_by_courses` | `get_announcements`, `get_todo` |
+| `mod_forum_get_forum_discussions` | `get_announcements`, `get_todo` |
+
+`get_file` does not use a web service function. It downloads a file link from your school's Moodle site with your key.
+
+If only some functions are off, the other tools keep working.
+
 ## What you can ask
 
 - "What's due this week?"
