@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- get_my_grades and get_course_grade_items now say that the school may hide grades, instead of showing a raw error, when the gradebook cannot be read.
 - New tool get_quizzes shows the open and close dates, time limit, attempts used and allowed, and best grade of each quiz in a course.
 
 ## 0.1.10

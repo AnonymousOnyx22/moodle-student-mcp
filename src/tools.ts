@@ -622,9 +622,13 @@ export const tools: ToolDef<Api>[] = [
     inputSchema: {},
     run: async (_args, api) => {
       const courses = await myCourses(api);
-      const r = await api.call<{ grades?: { courseid: number; grade: string }[] }>("gradereport_overview_get_course_grades", {
-        userid: await api.userId(),
-      });
+      let r: { grades?: { courseid: number; grade: string }[] };
+      try {
+        r = await api.call("gradereport_overview_get_course_grades", { userid: await api.userId() });
+      } catch (err) {
+        if (isSiteWideError(err)) throw err;
+        return `Could not read your grades. Your school may hide grades from the Moodle app. Check them in Moodle in your browser. Reason: ${reasonText(err)}`;
+      }
       const byId = new Map((r.grades ?? []).map((g) => [g.courseid, g.grade]));
       return bullets(
         courses.map((c) => {
@@ -642,10 +646,13 @@ export const tools: ToolDef<Api>[] = [
       "Answers 'what's in the gradebook for this course?' Lists every graded item for one course with the mark and percentage, including the course total when there is one. Input: course_id, the ID from get_my_courses. Ask: 'Show me the gradebook for Networking Basics.'",
     inputSchema: { course_id: courseId },
     run: async ({ course_id }, api) => {
-      const r = await api.call<{ usergrades?: { gradeitems?: any[] }[] }>("gradereport_user_get_grade_items", {
-        courseid: course_id,
-        userid: await api.userId(),
-      });
+      let r: { usergrades?: { gradeitems?: any[] }[] };
+      try {
+        r = await api.call("gradereport_user_get_grade_items", { courseid: course_id, userid: await api.userId() });
+      } catch (err) {
+        if (isSiteWideError(err)) throw err;
+        return `Could not read the gradebook for course ${course_id}. Your school may hide the gradebook from the Moodle app. Check it in Moodle in your browser. Reason: ${reasonText(err)}`;
+      }
       const items = r.usergrades?.[0]?.gradeitems ?? [];
       return bullets(
         items.map((i) => {

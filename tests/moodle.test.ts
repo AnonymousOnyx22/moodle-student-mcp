@@ -87,7 +87,7 @@ beforeAll(async () => {
     if (q.wstoken === "badrecord") {
       return send({ exception: "moodle_exception", errorcode: "invalidrecord", message: "Invalid record ID (record not found)" });
     }
-    if (q.wstoken !== "good" && q.wstoken !== "forumtoken") {
+    if (q.wstoken !== "good" && q.wstoken !== "forumtoken" && q.wstoken !== "hidegrades") {
       return send({ exception: "moodle_exception", errorcode: "invalidtoken", message: "Invalid token - token not found" });
     }
     switch (q.wsfunction) {
@@ -144,8 +144,14 @@ beforeAll(async () => {
         if (q.assignid === "2") return send({ lastattempt: { submission: { status: "submitted" } } });
         return send({ lastattempt: { submission: { status: "submitted" } }, feedback: { gradefordisplay: "8.00 / 10.00" } });
       case "gradereport_overview_get_course_grades":
+        if (q.wstoken === "hidegrades") {
+          return send({ exception: "webservice_access_exception", errorcode: "accessexception", message: "Access control exception" });
+        }
         return send({ grades: [{ courseid: 11, grade: "88.5" }, { courseid: 12, grade: "70" }, { courseid: 14, grade: "-" }] });
       case "gradereport_user_get_grade_items":
+        if (q.courseid === "14") {
+          return send({ exception: "webservice_access_exception", errorcode: "accessexception", message: "Access control exception" });
+        }
         return send({ usergrades: [{ gradeitems: [
           { itemname: "Lab 1", gradeformatted: "8.00", percentageformatted: "80.00 %" },
           { itemname: null, gradeformatted: "88.50", percentageformatted: "88.50 %" },
@@ -465,6 +471,16 @@ describe("moodle-student-mcp", () => {
     const { text } = await call(await connect(), "get_my_grades");
     expect(text).toContain("Networking Basics 88.5");
     expect(text).not.toContain("Old Course");
+  });
+
+  it("says plainly when the school hides the gradebook", async () => {
+    const one = await call(await connect(), "get_course_grade_items", { course_id: 14 });
+    expect(one.isError).toBe(false);
+    expect(one.text).toContain("may hide the gradebook");
+    const all = await call(await connect("hidegrades"), "get_my_grades");
+    expect(all.isError).toBe(false);
+    expect(all.text).toContain("may hide grades");
+    expect((await call(await connect("bad"), "get_my_grades")).isError).toBe(true);
   });
 
   it("shows grade items, content and announcements", async () => {
