@@ -509,7 +509,7 @@ describe("moodle-student-mcp", () => {
   it("reports a sign in problem instead of an empty list of missing work", async () => {
     const { text, isError } = await call(await connect("bad"), "get_missing_work");
     expect(isError).toBe(true);
-    expect(text).toBe(setupMessage("notSignedIn"));
+    expect(text).toContain(setupMessage("notSignedIn"));
   });
 
   it("reports grades only for current courses", async () => {
@@ -727,7 +727,7 @@ describe("moodle-student-mcp", () => {
   it("still reports a sign in problem instead of an empty list", async () => {
     const { text, isError } = await call(await connect("forumtoken"), "get_announcements");
     expect(isError).toBe(true);
-    expect(text).toBe(setupMessage("notSignedIn"));
+    expect(text).toContain(setupMessage("notSignedIn"));
   });
 
   it("turns Moodle's 200 error responses into friendly messages", async () => {
@@ -747,8 +747,16 @@ describe("moodle-student-mcp", () => {
     for (const [token, key] of cases) {
       const { text, isError } = await call(await connect(token), "get_my_courses");
       expect(isError, token).toBe(true);
-      expect(text, token).toBe(setupMessage(key));
+      expect(text, token).toContain(setupMessage(key));
     }
+  });
+
+  it("names the tool, the function and the README section for a site wide error", async () => {
+    const { text } = await call(await connect("bad"), "get_my_courses");
+    expect(text).toContain("This stopped get_my_courses while calling core_webservice_get_site_info.");
+    expect(text).toContain("moodle-student-mcp#quick-start");
+    const other = (await call(await connect("noauth"), "get_my_courses")).text;
+    expect(other).not.toContain("This stopped");
   });
 
   it("raises the same message for HTTP status errors", async () => {
@@ -760,7 +768,7 @@ describe("moodle-student-mcp", () => {
     for (const [token, key] of cases) {
       const { text, isError } = await call(await connect(token), "get_my_courses");
       expect(isError, token).toBe(true);
-      expect(text, token).toBe(setupMessage(key));
+      expect(text, token).toContain(setupMessage(key));
     }
   });
 
@@ -775,7 +783,7 @@ describe("moodle-student-mcp", () => {
   it("reads an HTML error page as a setup problem", async () => {
     const { text, isError } = await call(await connect("htmlpage"), "get_my_courses");
     expect(isError).toBe(true);
-    expect(text).toBe(setupMessage("webServicesNotEnabled"));
+    expect(text).toContain(setupMessage("webServicesNotEnabled"));
   });
 
   it("normalizes school URLs", () => {

@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { ApiError } from "./http.js";
+import { ApiError, siteWideHint } from "./http.js";
 
 export type Shape = Record<string, z.ZodTypeAny>;
 
@@ -23,7 +23,7 @@ export async function runTool<Api>(tool: ToolDef<Api>, args: unknown, api: Api):
     const text = await tool.run(args, api);
     return { content: [{ type: "text", text }] };
   } catch (err) {
-    const msg = err instanceof ApiError ? err.message : `Something went wrong: ${(err as Error).message}`;
+    const msg = err instanceof ApiError ? err.message + siteWideHint(err, tool.name) : `Something went wrong: ${(err as Error).message}`;
     return { content: [{ type: "text", text: msg }], isError: true };
   }
 }

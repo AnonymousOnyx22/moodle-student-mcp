@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- When a problem stops every tool, such as an expired key or web services turned off, the error now names the tool that failed, the Moodle web service function it was calling and the README section with the fix.
 - New tool get_calendar lists the calendar events between a start date and an end date (YYYY-MM-DD), for any dates, so you can ask what is due the week of Dec 1.
 - get_my_grades and get_course_grade_items now say that the school may hide grades, instead of showing a raw error, when the gradebook cannot be read.
 - New tool get_forum_posts reads one forum discussion with every reply. get_forum_discussions now shows the discussion_id to use with it.

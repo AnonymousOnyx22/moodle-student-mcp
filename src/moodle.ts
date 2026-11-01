@@ -31,13 +31,19 @@ export function createMoodleApi(baseUrl: string, token: string, fetchImpl?: type
     baseUrl,
     token,
     async call<T>(fn: string, params: Record<string, unknown> = {}): Promise<T> {
-      const data = await http.get<any>("webservice/rest/server.php", { wsfunction: fn, ...flatten(params) });
+      let data: any;
+      try {
+        data = await http.get<any>("webservice/rest/server.php", { wsfunction: fn, ...flatten(params) });
+      } catch (err) {
+        if (err instanceof ApiError) err.wsfunction ??= fn;
+        throw err;
+      }
       if (data && typeof data === "object" && !Array.isArray(data) && data.exception) {
         const code = String(data.errorcode ?? "");
         const detail = String(data.message ?? code);
         const key = moodleErrorKey(code);
         const text = key ? setupMessage(key) : `Moodle said: ${detail}`;
-        throw new ApiError(text, 200, JSON.stringify(data).slice(0, 300), key, detail);
+        throw new ApiError(text, 200, JSON.stringify(data).slice(0, 300), key, detail, fn);
       }
       return data as T;
     },

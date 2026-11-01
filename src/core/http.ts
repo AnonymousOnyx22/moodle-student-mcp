@@ -7,6 +7,8 @@ export class ApiError extends Error {
     public setup?: SetupProblemKey,
     /** The words the school's server sent, when it sent any. */
     public detail?: string,
+    /** The Moodle web service function that was being called, when known. */
+    public wsfunction?: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -82,6 +84,23 @@ const SITE_WIDE_PROBLEMS: SetupProblemKey[] = ["notSignedIn", "webServicesNotEna
 /** True when the error will happen on every call, so the caller should stop and report it. */
 export function isSiteWideError(err: unknown): boolean {
   return err instanceof ApiError && err.setup !== undefined && SITE_WIDE_PROBLEMS.includes(err.setup);
+}
+
+/** The README section a student reads for each site wide problem. */
+const GUIDE_LINKS: Record<string, string> = {
+  notSignedIn: "https://github.com/AnonymousOnyx22/moodle-student-mcp#quick-start",
+  webServicesNotEnabled: "https://github.com/AnonymousOnyx22/moodle-student-mcp#quick-start",
+  unreadableReply: "https://github.com/AnonymousOnyx22/moodle-student-mcp#troubleshooting",
+};
+
+/**
+ * The extra line for a site wide error: which tool failed, which web service
+ * function it was calling and where the README explains the fix. Empty for any other error.
+ */
+export function siteWideHint(err: unknown, toolName: string): string {
+  if (!(err instanceof ApiError) || !isSiteWideError(err) || !err.setup) return "";
+  const calling = err.wsfunction ? ` while calling ${err.wsfunction}` : "";
+  return `\nThis stopped ${toolName}${calling}. Setup steps: ${GUIDE_LINKS[err.setup]}`;
 }
 
 /**
