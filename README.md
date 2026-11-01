@@ -276,6 +276,35 @@ If only some functions are off, the other tools keep working.
 - "Read me the Week 1 page in Networking Basics."
 - "Open the slides PDF from week 2 and summarize it."
 
+## Why Moodle MCP
+
+Moodle MCP is a Moodle AI assistant for students. Your AI app asks your school's Moodle for your courses, due dates, grades, quizzes, forums and files, then answers in plain language. It only reads. It cannot submit, edit or delete anything, and your key goes only to your own school.
+
+Here is how it compares with the other ways to get Moodle into a chat:
+
+| | Moodle MCP | Copy and paste from Moodle | Other Moodle MCP servers | Moodle site or mobile app |
+| --- | --- | --- | --- | --- |
+| Your AI can ask Moodle itself | Yes | No, you paste it | Yes | No |
+| Made for students | Yes | Not applicable | Check each one | Yes |
+| Safe to hand to an AI | Read only, no write calls | You choose what to paste | Check what each one can change | Not applicable |
+| Needs a plugin on the school site | No | No | Check each one | No |
+| Needs the mobile web service turned on | Yes | No | Check each one | Yes |
+| Free | Yes | Yes | Check each one | Yes |
+
+For Brightspace, see the table in [Moodle vs Brightspace](#moodle-vs-brightspace).
+
+### Works with
+
+| App | How to add it |
+| --- | --- |
+| Claude Desktop | Paste the config block under [Claude Desktop](#claude-desktop) |
+| Claude Code | Run the `claude mcp add` line under [Claude Code](#claude-code) |
+| Cursor | Run the line under [Cursor](#cursor) |
+| VS Code | Run the `code --add-mcp` line under [VS Code](#vs-code) |
+| Windsurf | Add the same `npx -y moodle-student-mcp` command and the two environment variables to its MCP config |
+
+Any other app that runs a local MCP server over stdio can use the same command.
+
 ## Tools
 
 All tools are read only.
