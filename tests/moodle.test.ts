@@ -402,6 +402,13 @@ describe("moodle-student-mcp", () => {
     expect(text).toMatch(/Lab 1.*graded 8.00 \/ 10.00/);
   });
 
+  it("keeps listing assignments when one status fails", async () => {
+    const { text, isError } = await call(await connect(), "get_assignments", { course_id: 14 });
+    expect(isError).toBe(false);
+    expect(text).toMatch(/Group project.*status unknown/);
+    expect(text).toMatch(/Reading list.*draft/);
+  });
+
   it("sends array parameters the way Moodle expects", async () => {
     seenParams.length = 0;
     await call(await connect(), "get_assignments", { course_id: 11 });

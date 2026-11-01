@@ -536,17 +536,24 @@ export const tools: ToolDef<Api>[] = [
     run: async ({ course_id }, api) => {
       const r = await api.call<{ courses?: { assignments?: any[] }[] }>("mod_assign_get_assignments", { courseids: [course_id] });
       const list = (r.courses?.[0]?.assignments ?? []).sort((a, b) => (a.duedate || 9e12) - (b.duedate || 9e12)).slice(0, 25);
-      const lines = await Promise.all(
-        list.map(async (a) => {
-          let status = "status unknown";
-          try {
-            status = statusText(await api.call("mod_assign_get_submission_status", { assignid: a.id }));
-          } catch {
-            /* some schools hide status, keep going */
-          }
-          return `${a.name} due ${fmtUnix(a.duedate)} ${status}`;
-        }),
-      );
+      const lines: string[] = [];
+      for (let i = 0; i < list.length; i += STATUS_BATCH) {
+        const batch = await Promise.all(
+          list.slice(i, i + STATUS_BATCH).map(async (a) => {
+            try {
+              return { a, status: statusText(await api.call("mod_assign_get_submission_status", { assignid: a.id })) };
+            } catch (err) {
+              return { a, err };
+            }
+          }),
+        );
+        for (const r of batch) {
+          // some schools hide status, so only site wide errors stop the list
+          if ("err" in r && isSiteWideError(r.err)) throw r.err;
+          const status = "status" in r ? r.status : "status unknown";
+          lines.push(`${r.a.name} due ${fmtUnix(r.a.duedate)} ${status}`);
+        }
+      }
       return bullets(lines, "No assignments found.");
     },
   },
