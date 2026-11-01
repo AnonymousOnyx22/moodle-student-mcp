@@ -78,6 +78,19 @@
       "example": { "name": "get_assignments", "arguments": { "course_id": 11 } }
     },
     {
+      "name": "get_quizzes",
+      "description": "Lists up to 25 quizzes for one course with the open and close dates, the time limit, the attempts used and allowed, and your best grade.",
+      "parameters": [
+        {
+          "name": "course_id",
+          "type": "string | number",
+          "required": true,
+          "description": "Moodle course ID from get_my_courses."
+        }
+      ],
+      "example": { "name": "get_quizzes", "arguments": { "course_id": 11 } }
+    },
+    {
       "name": "get_missing_work",
       "description": "Lists the assignments in your courses that you have not handed in yet, with the course name and the due date. Drafts that were never handed in are included, and work that was already handed in or graded is left out. Up to 25 assignments in each course are checked and the list holds up to 50 items.",
       "parameters": [

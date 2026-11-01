@@ -551,6 +551,49 @@ export const tools: ToolDef<Api>[] = [
     },
   },
   {
+    name: "get_quizzes",
+    title: "Course quizzes",
+    description:
+      "Answers 'when does my quiz open, how many attempts do I have left and what did I score?' Lists up to 25 quizzes for one course with the open and close dates, the time limit, the attempts used and allowed, and your best grade. Input: course_id, the ID from get_my_courses. Ask: 'When does the quiz open in Networking Basics and how many attempts do I have left?'",
+    inputSchema: { course_id: courseId },
+    run: async ({ course_id }, api) => {
+      const r = await api.call<{ quizzes?: any[] }>("mod_quiz_get_quizzes_by_courses", { courseids: [course_id] });
+      const list = [...(r.quizzes ?? [])]
+        .filter((q) => q && q.visible !== 0)
+        .sort((a, b) => (a.timeclose || 9e12) - (b.timeclose || 9e12))
+        .slice(0, 25);
+      const userid = list.length ? await api.userId() : 0;
+      const lines = await Promise.all(
+        list.map(async (q) => {
+          const parts = [
+            q.timeopen ? `opens ${fmtUnix(q.timeopen)}` : "no open date",
+            q.timeclose ? `closes ${fmtUnix(q.timeclose)}` : "no close date",
+          ];
+          if (q.timelimit) parts.push(`time limit ${Math.round(q.timelimit / 60)} min`);
+          try {
+            const a = await api.call<{ attempts?: any[] }>("mod_quiz_get_user_attempts", { quizid: q.id, userid, status: "finished" });
+            const used = (a.attempts ?? []).length;
+            parts.push(q.attempts ? `${used} of ${q.attempts} attempts used` : `${used} attempts used, no limit`);
+          } catch {
+            parts.push("attempts unknown");
+          }
+          try {
+            const g = await api.call<{ hasgrade?: boolean; grade?: number }>("mod_quiz_get_user_best_grade", { quizid: q.id, userid });
+            if (g.hasgrade && typeof g.grade === "number") {
+              parts.push(`best grade ${Math.round(g.grade * 100) / 100}${q.grade ? ` / ${Math.round(q.grade * 100) / 100}` : ""}`);
+            } else {
+              parts.push("no grade yet");
+            }
+          } catch {
+            /* some schools hide grades, keep going */
+          }
+          return `${q.name}: ${parts.join(", ")}`;
+        }),
+      );
+      return bullets(lines, "No quizzes found.");
+    },
+  },
+  {
     name: "get_missing_work",
     title: "Missing work",
     description:

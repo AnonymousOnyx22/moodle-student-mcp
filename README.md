@@ -258,6 +258,7 @@ All tools are read only.
 | `get_overdue` | Past due items that still need action. Takes an optional `course_ids` list of course IDs |
 | `get_todo` | One digest for what to do next: overdue work, work due soon, assignments with no due date and the latest announcement subjects, each with the course name and due date. Takes an optional `course_ids` list, plus `days_ahead` and `overdue_days` to set the window |
 | `get_assignments` | Assignments for a course with due dates and submission status. Takes a `course_id` from `get_my_courses` |
+| `get_quizzes` | Quizzes for a course with open and close dates, time limit, attempts used and allowed, and your best grade. Takes a `course_id` from `get_my_courses` |
 | `get_missing_work` | Assignments you have not handed in yet, drafts included, with the course name and the due date. Takes an optional `course_ids` list of course IDs |
 | `get_my_grades` | Current grade for each course |
 | `get_course_grade_items` | Every graded item in a course with mark and percentage. Takes a `course_id` from `get_my_courses` |

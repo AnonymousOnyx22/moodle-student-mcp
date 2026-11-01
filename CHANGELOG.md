@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- New tool get_quizzes shows the open and close dates, time limit, attempts used and allowed, and best grade of each quiz in a course.
+
 ## 0.1.10
 
 - Update the table of sibling MCP servers in the README

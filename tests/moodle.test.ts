@@ -204,6 +204,20 @@ beforeAll(async () => {
         }
         return send({ discussions: [{ subject: "Welcome", name: "Welcome", timemodified: now - 1000, message: "<p>Hello <b>class</b></p>" }] });
       }
+      case "mod_quiz_get_quizzes_by_courses":
+        return send({
+          quizzes: q["courseids[0]"] === "11"
+            ? [
+                { id: 21, name: "Quiz 1", timeopen: now - 1000, timeclose: now + 5000, timelimit: 1800, attempts: 3, grade: 10 },
+                { id: 22, name: "Quiz 2", timeopen: 0, timeclose: 0, timelimit: 0, attempts: 0, grade: 10 },
+                { id: 23, name: "Hidden quiz", visible: 0 },
+              ]
+            : [],
+        });
+      case "mod_quiz_get_user_attempts":
+        return send({ attempts: q.quizid === "21" ? [{ attempt: 1 }, { attempt: 2 }] : [] });
+      case "mod_quiz_get_user_best_grade":
+        return send(q.quizid === "21" ? { hasgrade: true, grade: 7.5 } : { hasgrade: false });
       case "core_enrol_get_users_courses_fail":
         return send({});
     }
@@ -234,13 +248,13 @@ async function call(client: Client, name: string, args: Record<string, unknown> 
 describe("moodle-student-mcp", () => {
   it("exposes only read-only tools", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(12);
+    expect(tools.length).toBe(13);
     for (const t of tools) expect(t.annotations?.readOnlyHint).toBe(true);
   });
 
   it("describes every tool with the question it answers, its inputs and a sample prompt", async () => {
     const { tools } = await (await connect()).listTools();
-    expect(tools.length).toBe(12);
+    expect(tools.length).toBe(13);
     for (const t of tools) {
       expect(t.description, t.name).toMatch(/^Answers '/);
       expect(t.description, t.name).toMatch(/Ask: '/);
@@ -387,6 +401,19 @@ describe("moodle-student-mcp", () => {
     await call(await connect(), "get_assignments", { course_id: 11 });
     expect(seenParams.some((p) => p.wsfunction === "mod_assign_get_assignments" && p["courseids[0]"] === "11")).toBe(true);
     expect(flatten({ courseids: [1, 2], opts: { a: 1 } })).toEqual({ "courseids[0]": "1", "courseids[1]": "2", "opts[a]": "1" });
+  });
+
+  it("shows quiz dates, attempts used and the best grade", async () => {
+    const { text, isError } = await call(await connect(), "get_quizzes", { course_id: 11 });
+    expect(isError).toBe(false);
+    expect(text).toMatch(/Quiz 1: opens .*, closes .*, time limit 30 min, 2 of 3 attempts used, best grade 7\.5 \/ 10/);
+    expect(text).toMatch(/Quiz 2: no open date, no close date, 0 attempts used, no limit, no grade yet/);
+    expect(text).not.toContain("Hidden quiz");
+  });
+
+  it("says so when a course has no quizzes", async () => {
+    const { text } = await call(await connect(), "get_quizzes", { course_id: 14 });
+    expect(text).toContain("No quizzes found.");
   });
 
   it("lists the work that was never handed in", async () => {
